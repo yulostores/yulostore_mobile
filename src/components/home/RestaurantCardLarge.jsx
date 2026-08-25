@@ -1,9 +1,10 @@
-import { Image, View } from "react-native";
+import { View } from "react-native";
 import { Clock, Leaf } from "lucide-react-native";
 
 import useResponsive from "@/hooks/useResponsive";
 import Card from "@/components/ui/Card";
 import PressableScale from "@/components/ui/PressableScale";
+import RemoteImage from "@/components/ui/RemoteImage";
 import Text from "@/components/ui/Text";
 import { PRESS_SCALE } from "@/lib/motion";
 import FavouriteHeart from "./FavouriteHeart";
@@ -21,7 +22,8 @@ export default function RestaurantCardLarge({
   onPress,
 }) {
   const { size } = useResponsive();
-  const { name, image, rating, cuisines = [], eta, distance, priceHint, pureVeg } = restaurant;
+  const { name, image, fallbackImage, rating, cuisines = [], eta, distance, priceHint, pureVeg } =
+    restaurant;
 
   // Distance has no source in the API yet, and a storefront can legitimately
   // have no cuisines listed — the meta row drops whatever is missing rather than
@@ -43,7 +45,12 @@ export default function RestaurantCardLarge({
             keeping the same 180/390 ratio the frame was drawn at rather than
             leaving a fixed band that crowds a small phone. */}
         <View style={{ height: size(PHOTO_HEIGHT) }} className="w-full">
-          <Image source={image} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
+          <RemoteImage
+            source={image}
+            fallback={fallbackImage}
+            style={{ width: "100%", height: "100%" }}
+            resizeMode="cover"
+          />
 
           <FavouriteHeart favourite={favourite} label={name} onPress={onToggleFavourite} />
         </View>

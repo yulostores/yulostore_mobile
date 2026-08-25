@@ -9,11 +9,12 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { ArrowLeft, Send } from "lucide-react-native";
+import { Send } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
+import PageHeader from "@/components/customer/PageHeader";
 import { useFeed } from "@/context/FeedContext";
 import { accentFor } from "@/lib/accent";
 import { useSupportTicket, useCreateSupportTicket, useReplyToTicket } from "@/hooks/useSupport";
@@ -27,7 +28,7 @@ const TOPIC_TO_CATEGORY = {
   "delivery-partner": "other" // Fallback since live chat isn't built yet
 };
 
-export default function SupportThread({ navigation, route }) {
+export default function SupportThread({ route }) {
   const { topic, orderId, ticketId: initialTicketId } = route.params || {};
   
   const { vegOnly } = useFeed();
@@ -83,21 +84,15 @@ export default function SupportThread({ navigation, route }) {
         style={{ flex: 1 }} 
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        <View className="flex-row items-center justify-between px-5 pt-2 pb-4">
-          <Pressable
-            onPress={() => navigation.goBack()}
-            style={{ backgroundColor: accent.tint }}
-            className="size-12 items-center justify-center rounded-full"
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <ArrowLeft size={22} color={accent.icon} />
-          </Pressable>
-          <Text className="font-jakarta-bold text-[20px] text-foreground">
-            {ticketId ? `Ticket #${ticketId.slice(-6)}` : "Support"}
-          </Text>
-          <View className="size-12" />
-        </View>
+        <PageHeader
+          title={ticketId ? `Ticket #${ticketId.slice(-6)}` : "Support"}
+          size="sm"
+          align="center"
+          backStyle="circle"
+          iconColor={accent.icon}
+          circleColor={accent.tint}
+          className="pb-4"
+        />
 
         <ScrollView
           ref={scrollViewRef}

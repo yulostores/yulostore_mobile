@@ -1,5 +1,5 @@
 import { Image, Pressable, TextInput, View } from "react-native";
-import { Search, Share2, Utensils, X } from "lucide-react-native";
+import { Heart, Search, Share2, Utensils, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import BackButton from "@/components/customer/BackButton";
@@ -22,6 +22,8 @@ export default function MenuHero({
   onStartSearch,
   onClearSearch,
   onShare,
+  favourite,
+  onToggleFavourite,
   placeholder = "Search in menu",
 }) {
   const insets = useSafeAreaInsets();
@@ -91,6 +93,18 @@ export default function MenuHero({
             </Pressable>
           ) : null}
         </View>
+
+        {onToggleFavourite ? (
+          <Pressable
+            onPress={onToggleFavourite}
+            className={CIRCLE}
+            accessibilityRole="button"
+            accessibilityState={{ selected: favourite }}
+            accessibilityLabel={favourite ? "Remove from favourites" : "Save to favourites"}
+          >
+            <Heart size={20} color={favourite ? "#E23744" : "#1A1A1A"} fill={favourite ? "#E23744" : "transparent"} />
+          </Pressable>
+        ) : null}
 
         <Pressable
           onPress={onShare}

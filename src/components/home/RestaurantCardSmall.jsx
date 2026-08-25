@@ -4,6 +4,7 @@ import Svg, { Path } from "react-native-svg";
 
 import useResponsive from "@/hooks/useResponsive";
 import PressableScale from "@/components/ui/PressableScale";
+import RemoteImage from "@/components/ui/RemoteImage";
 import Text from "@/components/ui/Text";
 import RatingPill from "./RatingPill";
 
@@ -91,7 +92,7 @@ function CarouselDots({ count }) {
 
 export default function RestaurantCardSmall({ restaurant, ratingTone, onPress }) {
   const { size } = useResponsive();
-  const { name, image, rating, deliveryTime, offer, photoCount = 3 } = restaurant;
+  const { name, image, fallbackImage, rating, deliveryTime, offer, photoCount = 3 } = restaurant;
 
   return (
     <PressableScale
@@ -105,7 +106,13 @@ export default function RestaurantCardSmall({ restaurant, ratingTone, onPress })
       </View>
 
       <View style={{ height: size(PHOTO_HEIGHT) }} className="w-full overflow-hidden rounded-t-2xl">
-        <Image source={image} style={{ width: "100%", height: "100%" }} resizeMode="cover" resizeMethod="resize" />
+        <RemoteImage
+          source={image}
+          fallback={fallbackImage}
+          style={{ width: "100%", height: "100%" }}
+          resizeMode="cover"
+          resizeMethod="resize"
+        />
         {offer ? <OfferRibbon label={offer} size={size} /> : null}
         <CarouselDots count={photoCount} />
       </View>

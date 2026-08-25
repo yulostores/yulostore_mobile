@@ -9,27 +9,20 @@ import OnboardingStep3 from "@/screens/onboarding/OnboardingStep3";
 import PhoneLogin from "@/screens/auth/PhoneLogin";
 import OtpVerification from "@/screens/auth/OtpVerification";
 import LocationSetup from "@/screens/location/LocationSetup";
-import Home from "@/screens/home/Home";
+import CustomerTabs from "@/navigation/CustomerTabs";
 import ScanQr from "@/screens/scan/ScanQr";
-import Search from "@/screens/search/Search";
 import SearchResults from "@/screens/search/SearchResults";
 import MenuRoute from "@/screens/menu/MenuRoute";
 import ItemDetail from "@/screens/menu/ItemDetail";
 import Cart from "@/screens/cart/Cart";
-import DeliveryAddress from "@/screens/checkout/DeliveryAddress";
-import Checkout from "@/screens/checkout/Checkout";
-import Payment from "@/screens/checkout/Payment";
 import OrderPlaced from "@/screens/orders/OrderPlaced";
 import FleetSearch from "@/screens/orders/FleetSearch";
 import OrderTracking from "@/screens/orders/OrderTracking";
 import FleetOrderTracking from "@/screens/orders/FleetOrderTracking";
-import OrderHistory from "@/screens/orders/OrderHistory";
 import OrderDetails from "@/screens/orders/OrderDetails";
-import Profile from "@/screens/profile/Profile";
 import Favourites from "@/screens/profile/Favourites";
 import SavedAddresses from "@/screens/profile/SavedAddresses";
 import NotificationPreferences from "@/screens/profile/NotificationPreferences";
-import Settings from "@/screens/profile/Settings";
 import VegFleetPreference from "@/screens/profile/VegFleetPreference";
 import HelpSupport from "@/screens/support/HelpSupport";
 import SupportThread from "@/screens/support/SupportThread";
@@ -64,7 +57,7 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName={signedIn ? (needsLocation ? "Location" : "Home") : "Splash"}
+      initialRouteName={signedIn ? (needsLocation ? "Location" : "Tabs") : "Splash"}
     >
       {!signedIn ? (
         <Stack.Group>
@@ -101,7 +94,10 @@ export default function RootNavigator() {
         </Stack.Group>
       ) : (
         <Stack.Group>
-          <Stack.Screen name="Home" component={Home} />
+          {/* The one bottom nav in the app: Home, Search, Orders and Profile as
+              real tabs, always present. Everything below pushes on top of it and
+              covers it full-screen — that's the entire rest of this list. */}
+          <Stack.Screen name="Tabs" component={CustomerTabs} />
 
           {/* The feed's bottom nav opens this over everything else — full-screen,
               transparent status bar, and closed with its own X rather than the
@@ -113,12 +109,10 @@ export default function RootNavigator() {
           <Stack.Screen name="Location">
             {({ navigation }) => (
               <LocationSetup
-                onNext={() => navigation.reset({ index: 0, routes: [{ name: "Home" }] })}
+                onNext={() => navigation.reset({ index: 0, routes: [{ name: "Tabs" }] })}
               />
             )}
           </Stack.Screen>
-
-          <Stack.Screen name="Search" component={Search} options={{ animation: "fade" }} />
 
           <Stack.Screen name="SearchResults" component={SearchResults} options={{ animation: "fade" }} />
 
@@ -129,21 +123,15 @@ export default function RootNavigator() {
               lighter ones are customised in a sheet over the menu itself. */}
           <Stack.Screen name="Item" component={ItemDetail} />
 
-          {/* The checkout flow, in the order it's walked: the cart is reviewed, the
-              address confirmed, and the order paid for. Address is reached twice —
-              on the way through, and again from checkout to change it — which is
-              why it carries a `next` param rather than always moving forward. */}
+          {/* The whole checkout flow lives on this one screen now (see
+              docs/UX_SIMPLIFICATION_CHECKLIST.md, Phase 2) — address, notes,
+              payment method and paying are all answered inline or in a sheet
+              over the cart, so there's nothing left to push to. */}
           <Stack.Screen name="Cart" component={Cart} />
 
-          <Stack.Screen name="Address" component={DeliveryAddress} />
-
-          <Stack.Screen name="Checkout" component={Checkout} />
-
-          <Stack.Screen name="Payment" component={Payment} />
-
-          {/* Past the point of paying: Payment resets the stack to the feed plus
+          {/* Past the point of paying: Cart resets the stack to the feed plus
               this, rather than pushing, so going back from a confirmation can't land
-              on a checkout for a cart that has already been charged and emptied. */}
+              on a cart for an order that has already been charged and emptied. */}
           <Stack.Screen name="OrderPlaced" component={OrderPlaced} />
 
           {/* Only reached when the veg-only fleet was asked for: the wait for a
@@ -153,28 +141,23 @@ export default function RootNavigator() {
 
           {/* Tracking, in its two forms: the map-led screen an ordinary order lands
               on, and the same order without a live position to draw, which is where
-              a veg-only fleet order starts. Kept apart from "Orders" below — that
-              tab is the history of everything already delivered, and an order still
-              on the road doesn't belong in it. */}
+              a veg-only fleet order starts. Kept apart from the Orders tab — that's
+              the history of everything already delivered, and an order still on the
+              road doesn't belong in it. */}
           <Stack.Screen name="Tracking" component={OrderTracking} />
 
           <Stack.Screen name="FleetTracking" component={FleetOrderTracking} />
 
-          {/* Everything already placed, and one of them opened. */}
-          <Stack.Screen name="Orders" component={OrderHistory} />
-
+          {/* The Orders tab is the list; this is one of them opened. */}
           <Stack.Screen name="OrderDetails" component={OrderDetails} />
 
-          {/* The account section. Profile is its hub and every other screen here is
-              one of its rows, which is why they're all reachable by name rather than
-              nested — the feed's avatar and the tracking screens link straight in. */}
-          <Stack.Screen name="Profile" component={Profile} />
-
+          {/* The account section. The Profile tab is its hub and every other
+              screen here is one of its rows, which is why they're all reachable by
+              name rather than nested — the feed's avatar and the tracking screens
+              link straight in. */}
           <Stack.Screen name="Favourites" component={Favourites} />
 
           <Stack.Screen name="SavedAddresses" component={SavedAddresses} />
-
-          <Stack.Screen name="Settings" component={Settings} />
 
           <Stack.Screen name="VegFleetPreference" component={VegFleetPreference} />
 

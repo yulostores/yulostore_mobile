@@ -67,8 +67,10 @@ export default function OrderHistory({ navigation }) {
     });
   };
 
+  // No bottom edge — a tab screen now, and the tab bar below it already
+  // carries the bottom safe-area inset.
   return (
-    <Screen edges={["top", "bottom"]}>
+    <Screen edges={["top"]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: SCROLL_PADDING }}

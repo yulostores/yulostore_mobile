@@ -122,8 +122,10 @@ export default function Search({ navigation, route }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route?.params?.voiceAutoStart]);
 
+  // No bottom edge — a tab screen now, and the tab bar below it already
+  // carries the bottom safe-area inset.
   return (
-    <Screen edges={["top", "bottom"]}>
+    <Screen edges={["top"]}>
       {vegOnly ? (
         <View className="px-2 pb-3 pt-1">
           <VegModeBanner className="w-full justify-center" />

@@ -1,8 +1,9 @@
-import { Image, ScrollView } from "react-native";
+import { ScrollView } from "react-native";
 import { FadeIn } from "react-native-reanimated";
 
 import useResponsive from "@/hooks/useResponsive";
 import PressableScale from "@/components/ui/PressableScale";
+import RemoteImage from "@/components/ui/RemoteImage";
 import Text from "@/components/ui/Text";
 import { PRESS_SCALE, enter } from "@/lib/motion";
 
@@ -38,8 +39,9 @@ export default function DishCategoryRow({ items, onSelect }) {
           {/* Figma puts a drop-shadow on this node, but RN shadows are drawn
               from the view box rather than the alpha channel — a rectangle
               behind these transparent cut-outs reads as an artefact. */}
-          <Image
+          <RemoteImage
             source={item.image}
+            fallback={item.fallbackImage}
             style={{ width: size(IMAGE_SIZE), height: size(IMAGE_SIZE) }}
             resizeMode="contain"
             resizeMethod="resize"
@@ -47,6 +49,12 @@ export default function DishCategoryRow({ items, onSelect }) {
 
           <Text
             numberOfLines={2}
+            // A single long word (e.g. "Sandwich") has no space to wrap at, so
+            // without this it breaks mid-word ("Sandwic\nh") instead of shrinking
+            // to fit one line — two-word labels like "Butter Chicken" already fit
+            // at full size, so they're untouched.
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
             className="mt-1 text-center font-jakarta-semibold text-[14px] leading-[18px] text-muted-foreground"
           >
             {item.label}

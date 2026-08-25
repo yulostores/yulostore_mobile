@@ -4,7 +4,7 @@ import { Check, Search, TriangleAlert } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useFeed } from "@/context/FeedContext";
-import AppBar from "@/components/customer/AppBar";
+import PageHeader from "@/components/customer/PageHeader";
 import Button from "@/components/ui/Button";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
@@ -102,14 +102,15 @@ export default function FleetSearch({ navigation, route }) {
 
   // Reached by resetting the stack past checkout, so there may be nothing behind
   // this screen to go back to.
-  const back = () => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"));
+  const back = () =>
+    navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Tabs", { screen: "Home" });
 
   const busy = keepWaiting.isPending || fallback.isPending;
   const showPrompt = status === "searching" && remaining != null && remaining > 0;
 
   return (
     <Screen edges={["top"]}>
-      <AppBar title={`Your order · ${restaurantName}`} onBack={back} />
+      <PageHeader title={`Your order · ${restaurantName}`} size="sm" numberOfLines={1} onBack={back} />
 
       {isLoading ? (
         <View className="flex-1 items-center justify-center">

@@ -14,13 +14,14 @@ import { accentFor } from "@/lib/accent";
 const SCROLL_PADDING = 32;
 
 // Figma "30 · Saved addresses". The address book as an account screen, as
-// distinct from `checkout/DeliveryAddress`, which is the same list being asked a
-// question: there is no confirm bar here, because nothing is being checked out.
-// Choosing one still selects it — the address book has one selected address and
-// tapping a card is how it moves, whichever screen you're on.
+// distinct from the cart's `AddressSheet`, which asks the same list a
+// question on the way to paying: there is no confirm bar here, because nothing
+// is being checked out. Choosing one still selects it — the address book has
+// one selected address and tapping a card is how it moves, whichever surface
+// you're on.
 //
-// Adding goes through the same sheet checkout uses, so an address created here
-// is shaped exactly like one created on the way to paying.
+// Adding goes through the same form the cart's address sheet uses, so an
+// address created here is shaped exactly like one created on the way to paying.
 export default function SavedAddresses() {
   const { addresses, selectedAddress, selectAddress, addAddress, deleteAddress } =
     useCustomerAuth();

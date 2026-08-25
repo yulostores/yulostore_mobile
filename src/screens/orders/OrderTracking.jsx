@@ -94,7 +94,8 @@ export default function OrderTracking({ navigation, route }) {
   // Back from tracking goes to the feed, never to the confirmation screen the
   // customer came through: an order that has been paid for has nothing left to
   // confirm, and the checkout stack behind it was already reset away.
-  const back = () => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"));
+  const back = () =>
+    navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Tabs", { screen: "Home" });
 
   return (
     <Screen edges={["top", "bottom"]}>

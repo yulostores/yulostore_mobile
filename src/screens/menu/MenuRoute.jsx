@@ -2,8 +2,7 @@ import { ActivityIndicator, View } from "react-native";
 
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
-import PureVegMenu from "@/screens/menu/PureVegMenu";
-import RestaurantMenu from "@/screens/menu/RestaurantMenu";
+import Menu from "@/screens/menu/Menu";
 import { LAYOUTS } from "@/data/menu";
 import { useRestaurantMenu } from "@/hooks/useRestaurantMenu";
 import { toRestaurantCard } from "@/lib/restaurant";
@@ -68,9 +67,5 @@ export default function MenuRoute({ navigation, route }) {
     layout: restaurant.isPureVeg ? LAYOUTS.COMPACT : LAYOUTS.GRID,
   };
 
-  if (menu.layout === LAYOUTS.COMPACT) {
-    return <PureVegMenu navigation={navigation} menu={menu} restaurantName={menu.name} />;
-  }
-
-  return <RestaurantMenu navigation={navigation} menu={menu} restaurantName={menu.name} />;
+  return <Menu navigation={navigation} menu={menu} restaurantName={menu.name} />;
 }

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
-import { Clock, Heart, Leaf, LifeBuoy, LogOut, MapPin, Settings as SettingsIcon } from "lucide-react-native";
+import { Bell, Clock, FlaskConical, Heart, Leaf, LifeBuoy, LogOut, MapPin } from "lucide-react-native";
 
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useFeed } from "@/context/FeedContext";
@@ -74,8 +74,10 @@ export default function Profile({ navigation }) {
 
   const go = (route, params) => navigation.navigate(route, params);
 
+  // No bottom edge — a tab screen now, and the tab bar below it already
+  // carries the bottom safe-area inset.
   return (
-    <Screen edges={["top", "bottom"]}>
+    <Screen edges={["top"]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: SCROLL_PADDING }}
@@ -118,7 +120,15 @@ export default function Profile({ navigation }) {
             onPress={() => go("VegFleetPreference")}
           />
 
-          <SettingsRow label="Settings" icon={SettingsIcon} onPress={() => go("Settings")} />
+          <SettingsRow label="Notifications" icon={Bell} onPress={() => go("Notifications")} />
+
+          {__DEV__ ? (
+            <SettingsRow
+              label="Feature flags (dev)"
+              icon={FlaskConical}
+              onPress={() => go("FeatureFlags")}
+            />
+          ) : null}
 
           <SettingsRow label="Help & support" icon={LifeBuoy} onPress={() => go("Help")} />
 

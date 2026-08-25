@@ -41,6 +41,24 @@ const textVariants = cva("font-jakarta-semibold text-center", {
   defaultVariants: { variant: "default", size: "default" },
 });
 
+// Same colors as the Tailwind tokens above (hsl(var(--primary)) etc, see
+// global.css), duplicated here as inline styles. NativeWind resolves
+// `className` into RN styles at runtime, but PressableScale's container is a
+// Reanimated `Animated.createAnimatedComponent(Pressable)` registered via a
+// manual `cssInterop(..., { className: "style" })` — on native (not web,
+// which uses real CSS) that combination doesn't reliably repaint the
+// class-driven background/text colors when `variant`/`disabled` changes, so
+// the button can get stuck showing its initial color. `style` bypasses that
+// pipeline entirely — RN applies it directly — so it renders identically on
+// both platforms regardless of that bug.
+const VARIANT_COLORS = {
+  default: { bg: "#FF5E00", text: "#FFFFFF" },
+  secondary: { bg: "#FFFFFF", text: "#F05728", borderColor: "#F05728" },
+  ghost: { bg: "transparent", text: "#1A1A1A" },
+  destructive: { bg: "#E53734", text: "#FFFFFF" },
+  disabled: { bg: "#D6D6D6", text: "#666666" },
+};
+
 export default function Button({
   children,
   variant,
@@ -52,6 +70,7 @@ export default function Button({
   ...props
 }) {
   const effectiveVariant = disabled && variant !== "disabled" ? "disabled" : variant;
+  const colors = VARIANT_COLORS[effectiveVariant ?? "default"];
 
   return (
     <PressableScale
@@ -66,6 +85,10 @@ export default function Button({
         className,
       )}
       style={[
+        {
+          backgroundColor: colors.bg,
+          ...(colors.borderColor ? { borderColor: colors.borderColor } : null),
+        },
         effectiveVariant === "default" && {
           shadowColor: "#FF5E00",
           shadowOffset: { width: 0, height: 4 },
@@ -84,7 +107,10 @@ export default function Button({
         // which arrives as an array of nodes, not a single string) — RN
         // throws if a bare text node is a direct child of a View/Pressable,
         // so anything that isn't already a real element gets wrapped here.
-        <Text className={cn(textVariants({ variant: effectiveVariant, size }), textClassName)}>
+        <Text
+          className={cn(textVariants({ variant: effectiveVariant, size }), textClassName)}
+          style={{ color: colors.text }}
+        >
           {children}
         </Text>
       )}

@@ -1,9 +1,10 @@
 import { ActivityIndicator, Linking, Pressable, ScrollView, View } from "react-native";
-import { ArrowLeft, Bike, Leaf, Phone } from "lucide-react-native";
+import { Bike, Leaf, Phone } from "lucide-react-native";
 
 import { useFeed } from "@/context/FeedContext";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
+import PageHeader from "@/components/customer/PageHeader";
 import VegModeBanner from "@/components/home/VegModeBanner";
 import { TIMELINE, stageIndex } from "@/data/orders";
 import { accentFor } from "@/lib/accent";
@@ -71,7 +72,8 @@ export default function FleetOrderTracking({ navigation, route }) {
   // answering a tap rather than dead-ending under a live order.
   const help = () => navigation.navigate("Support");
 
-  const back = () => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Home"));
+  const back = () =>
+    navigation.canGoBack() ? navigation.goBack() : navigation.navigate("Tabs", { screen: "Home" });
 
   return (
     <Screen edges={["top", "bottom"]}>
@@ -89,15 +91,7 @@ export default function FleetOrderTracking({ navigation, route }) {
           style={{ height: ILLUSTRATION_HEIGHT }}
           className="items-center justify-center bg-success-tint"
         >
-          <Pressable
-            onPress={back}
-            hitSlop={10}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-            className="absolute left-5 top-5"
-          >
-            <ArrowLeft size={26} color="#1A1A1A" strokeWidth={2.4} />
-          </Pressable>
+          <PageHeader variant="floating" onBack={back} topOffset={20} />
 
           <Bike size={56} color={accent.icon} strokeWidth={1.8} />
         </View>

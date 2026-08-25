@@ -3,7 +3,7 @@ import { Hammer } from "lucide-react-native";
 
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
-import AppBar from "./AppBar";
+import PageHeader from "./PageHeader";
 
 // One route per remaining Figma screen so in-app navigation never dead-ends,
 // even before that flow has been built. Swap this out for the real screen
@@ -11,7 +11,7 @@ import AppBar from "./AppBar";
 export default function PlaceholderScreen({ title, flow }) {
   return (
     <Screen edges={["top", "bottom"]}>
-      <AppBar title={title} onBack />
+      <PageHeader title={title} size="sm" numberOfLines={1} />
       <View className="flex-1 items-center justify-center gap-3 px-8">
         <View className="size-14 items-center justify-center rounded-2xl bg-muted">
           <Hammer size={24} color="#666666" />

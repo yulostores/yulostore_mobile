@@ -14,7 +14,6 @@ import ActiveOrderBar from "@/components/home/ActiveOrderBar";
 import DiscardCartDialog from "@/components/cart/DiscardCartDialog";
 import CategorySwitcher from "@/components/home/CategorySwitcher";
 import DishCategoryRow from "@/components/home/DishCategoryRow";
-import HomeBottomNav from "@/components/home/HomeBottomNav";
 import HomeFeedSkeleton from "@/components/home/HomeFeedSkeleton";
 import HomeHeader from "@/components/home/HomeHeader";
 import HomeSearchBar from "@/components/home/HomeSearchBar";
@@ -52,7 +51,11 @@ function RestaurantRow({ data, ratingTone, onSelect }) {
       contentContainerStyle={{ gap: size(13), paddingHorizontal: gutter }}
     >
       {data.map((restaurant, index) => (
-        <Animated.View key={restaurant.id} entering={enter(FadeIn, { index })}>
+        // `recommendedForYou` rows are dishes, not restaurants — its entries carry
+        // `id: restaurantId`, so two recommended dishes from the same restaurant
+        // collide on that key. `itemId` (the dish's own id) is unique per row;
+        // `recommendedRestaurants` rows don't have one, so `id` covers those.
+        <Animated.View key={restaurant.itemId ?? restaurant.id} entering={enter(FadeIn, { index })}>
           <RestaurantCardSmall
             restaurant={restaurant}
             ratingTone={ratingTone}
@@ -77,7 +80,6 @@ export default function Home({ navigation }) {
     useFeed();
 
   const [category, setCategory] = useState("food");
-  const [tab, setTab] = useState("delivery");
 
   // The restaurant the customer is trying to switch to while a cart is open —
   // set only while the discard prompt is up.
@@ -147,6 +149,7 @@ export default function Home({ navigation }) {
         id: `chip-${index}`,
         label: chip.label,
         image: chip.iconUrl ? { uri: formatImageUrl(chip.iconUrl) } : categoryBiryani,
+        fallbackImage: categoryBiryani,
         // Veg mode already filtered what came back, so every chip under it is veg.
         veg: vegOnly,
         query: chip.queryParam ?? chip.label,
@@ -163,7 +166,8 @@ export default function Home({ navigation }) {
         itemId: item._id,
         name: item.name,
         image: item.image ? { uri: formatImageUrl(item.image) } : dishBiryani,
-        offer: `₹${item.effectivePrice}`,
+        fallbackImage: dishBiryani,
+        offer: item.effectivePrice != null ? `₹${item.effectivePrice}` : null,
         veg: item.foodType === "veg",
         rating: "New",
       })),
@@ -189,11 +193,14 @@ export default function Home({ navigation }) {
 
   const ratingTone = vegOnly ? "veg" : "default";
 
+  // No bottom edge — this is a tab screen now, and the tab bar below it
+  // already carries the bottom safe-area inset. Padding for it again here
+  // would just leave a gap of dead space above the bar.
   return (
-    <Screen edges={["top", "bottom"]}>
+    <Screen edges={["top"]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 160 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         // A feed of nearby restaurants goes stale as the customer moves — pulling
         // to refresh is the gesture they'll reach for, on a screen that otherwise
         // has no way to ask for fresh data.
@@ -211,6 +218,7 @@ export default function Home({ navigation }) {
           <HomeHeader
             address={deliveryLocation?.label ?? "Set your delivery address"}
             onPressAddress={() => navigation?.navigate("Location")}
+            onPressScan={() => navigation?.navigate("ScanQr")}
             onPressProfile={() => navigation?.navigate("Profile")}
           />
 
@@ -349,25 +357,26 @@ export default function Home({ navigation }) {
         onDiscard={discardCart}
       />
 
-      {/* One bottom-anchored stack instead of two independently-guessed
-          absolute offsets: those drifted close enough to overlap the cart
-          bar and the bottom nav. `mb-3` on the cart bar guarantees a clear
-          gap above the nav no matter how either one's height changes,
-          rather than two pixel values that both have to stay in sync. */}
+      {/* The tab bar itself is drawn by the navigator below this screen — this
+          is the one other thing that floats over it: a single "current
+          activity" slot, not a stack. An order in flight and a cart building
+          up for the next one can technically both be true at once, but
+          that's rare enough not to earn two stacked pills — the order in
+          flight wins the slot, since it's the thing already committed and
+          time-sensitive; the cart bar reappears here the moment that order
+          drops off `useActiveOrder`. */}
       <View className="absolute inset-x-0 bottom-2">
         {activeOrder ? (
           <ActiveOrderBar
-            className="mx-[7px] mb-3"
+            className="mx-[7px]"
             restaurantName={activeOrderRestaurantName}
             status={activeOrder.status}
             accent={accentFor(vegOnly)}
             onPress={() => navigation?.navigate("Tracking", { orderId: activeOrder._id })}
           />
-        ) : null}
-
-        {cart && !cartBarDismissed ? (
+        ) : cart && !cartBarDismissed ? (
           <StickyCartBar
-            className="mx-[7px] mb-3"
+            className="mx-[7px]"
             restaurantName={cart.restaurantName}
             restaurantImage={cartRestaurant}
             itemCount={cart.itemCount}
@@ -377,17 +386,6 @@ export default function Home({ navigation }) {
             onDismiss={() => setCartBarDismissed(true)}
           />
         ) : null}
-
-        <View className="mx-4">
-          {/* History is a screen of its own, not a second feed — it navigates
-              away instead of switching the tile underneath. */}
-          <HomeBottomNav
-            value={tab}
-            vegOnly={vegOnly}
-            onChange={(key) => (key === "history" ? navigation?.navigate("Orders") : setTab(key))}
-            onScan={() => navigation?.navigate("ScanQr")}
-          />
-        </View>
       </View>
     </Screen>
   );

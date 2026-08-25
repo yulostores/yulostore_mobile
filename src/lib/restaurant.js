@@ -25,6 +25,9 @@ export function toRestaurantCard(restaurant, { fallbackImage = null } = {}) {
     id: restaurant._id ?? restaurant.id,
     name: restaurant.name,
     image: image ? { uri: formatImageUrl(image) } : fallbackImage,
+    // Kept alongside `image` (not just used when the API sent nothing) so a
+    // card can also fall back here if the remote photo 404s after render.
+    fallbackImage,
     // A restaurant nobody has rated yet has `avgRating: 0`, which would print as
     // a real score of zero rather than as "not rated".
     rating: restaurant.avgRating ? restaurant.avgRating.toFixed(1) : "New",

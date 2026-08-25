@@ -1,5 +1,4 @@
 import { Pressable } from "react-native";
-import { cssInterop } from "nativewind";
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -10,18 +9,6 @@ import Animated, {
 
 import { DURATION, PRESS_SCALE, SPRING } from "@/lib/motion";
 import { cn } from "@/lib/utils";
-
-// RN's own `Pressable` gives you `pressed` in a style callback, but that's a
-// binary swap on the JS thread: the control snaps to its pressed size a frame
-// late and snaps back the instant the finger lifts. Driving it from a shared
-// value instead keeps the whole press on the UI thread, so it stays smooth
-// while the list underneath is still scrolling or a query is resolving.
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
-// Reanimated builds this component at runtime, so NativeWind's compiler can't
-// know it takes a `className` — this is the registration that maps the prop
-// onto `style` the way it does for the built-in RN components.
-cssInterop(AnimatedPressable, { className: "style" });
 
 /**
  * A pressable that acknowledges the touch by shrinking very slightly.
@@ -71,15 +58,30 @@ export default function PressableScale({
   };
 
   return (
-    <AnimatedPressable
-      disabled={disabled}
-      onPressIn={disabled ? undefined : handlePressIn}
-      onPressOut={disabled ? undefined : handlePressOut}
-      className={cn(className)}
-      style={[style, animatedStyle]}
-      {...props}
-    >
-      {children}
-    </AnimatedPressable>
+    // Two nodes, not one: on native, NativeWind's class styling and Reanimated's
+    // UI-thread animated style can't reliably share a single node — the
+    // class-driven (and even literal inline-style) colors/shape silently fail to
+    // paint. HomeBottomNav's NavTab hit the same thing and routed around it
+    // locally (see its comments); this fixes it at the source instead. The outer
+    // Animated.View carries only the animated opacity/scale, so the whole pill
+    // still dims and shrinks together; the inner plain Pressable carries
+    // className/style/touch exactly the way every non-animated NativeWind
+    // component in this app already does — the one combination proven to render
+    // correctly on-device (see SettingsRow, which is className-only and renders
+    // fine). `style` goes on both: the outer needs any layout sizing a caller
+    // passes (e.g. NavTab's `flex: 1`, to stretch inside its own parent), and
+    // duplicating it onto the inner is harmless.
+    <Animated.View style={[style, animatedStyle]}>
+      <Pressable
+        disabled={disabled}
+        onPressIn={disabled ? undefined : handlePressIn}
+        onPressOut={disabled ? undefined : handlePressOut}
+        className={cn(className)}
+        style={style}
+        {...props}
+      >
+        {children}
+      </Pressable>
+    </Animated.View>
   );
 }

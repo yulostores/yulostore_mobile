@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, ScrollView, TextInput, View } from "react-native";
 import { Phone } from "lucide-react-native";
 
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
@@ -50,59 +50,67 @@ export default function PhoneLogin({ onNext }) {
           keyboard against this view's own frame, so a frame that already ends
           above the keyboard yields ~0 padding rather than double-counting it. */}
       <KeyboardAvoidingView behavior="padding" className="flex-1">
-        <View className="px-6 pt-2">
-          <BackButton />
-        </View>
-
-        <View className="flex-1 px-6 pt-8">
-          <Text className="font-jakarta-extrabold text-[18px] uppercase tracking-wide text-primary">
-            Yulo Stores
-          </Text>
-
-          <Text className="mt-6 font-jakarta-extrabold text-[26px] leading-[32px] text-foreground">
-            Enter your mobile{"\n"}number
-          </Text>
-
-          <Text className="mt-3 font-jakarta text-[14px] leading-[20px] text-muted-foreground">
-            We'll send you a one-time code to verify it's you
-          </Text>
-
-          <View className="mt-8 h-12 w-full flex-row items-center gap-2 rounded-full border border-border bg-white px-4">
-            <Phone size={18} color="#999999" />
-            <Text className="font-jakarta-semibold text-[16px] text-foreground">{COUNTRY_CODE}</Text>
-            <View className="h-5 w-px bg-border" />
-            <TextInput
-              value={phone}
-              onChangeText={(t) => {
-                setError("");
-                setPhone(t.replace(/\D/g, "").slice(0, PHONE_LENGTH));
-              }}
-              keyboardType="number-pad"
-              placeholder="98765 43210"
-              placeholderTextColor="#999999"
-              maxLength={PHONE_LENGTH}
-              autoFocus
-              className="flex-1 font-jakarta text-[16px] text-foreground"
-              accessibilityLabel="Mobile number"
-            />
+        {/* A plain View here clips instead of scrolling: on a physical device the
+            keyboard eats real screen space (unlike web, which has no overlay
+            keyboard), and on shorter screens top+content+button+keyboard can
+            exceed the viewport, pushing the pinned Continue button off-screen
+            with no way to reach it. flexGrow:1 keeps the pinned look when
+            everything fits, and makes it scrollable when it doesn't. */}
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+          <View className="px-6 pt-2">
+            <BackButton />
           </View>
 
-          {error ? (
-            <Text className="mt-3 font-jakarta text-[13px] text-destructive">{error}</Text>
-          ) : null}
-        </View>
+          <View className="flex-1 px-6 pt-8">
+            <Text className="font-jakarta-extrabold text-[18px] uppercase tracking-wide text-primary">
+              Yulo Stores
+            </Text>
 
-        <View className="gap-4 px-6 pb-10">
-          <Button disabled={!canContinue || loading} onPress={handleContinue}>
-            {loading ? "Sending..." : "Continue"}
-          </Button>
+            <Text className="mt-6 font-jakarta-extrabold text-[26px] leading-[32px] text-foreground">
+              Enter your mobile{"\n"}number
+            </Text>
 
-          <Text className="text-center font-jakarta text-[12px] leading-[18px] text-muted-foreground">
-            By continuing, you agree to our{" "}
-            <Text className="font-jakarta-semibold text-[12px] text-foreground">Terms</Text> and{" "}
-            <Text className="font-jakarta-semibold text-[12px] text-foreground">Privacy Policy</Text>
-          </Text>
-        </View>
+            <Text className="mt-3 font-jakarta text-[14px] leading-[20px] text-muted-foreground">
+              We'll send you a one-time code to verify it's you
+            </Text>
+
+            <View className="mt-8 h-12 w-full flex-row items-center gap-2 rounded-full border border-border bg-white px-4">
+              <Phone size={18} color="#999999" />
+              <Text className="font-jakarta-semibold text-[16px] text-foreground">{COUNTRY_CODE}</Text>
+              <View className="h-5 w-px bg-border" />
+              <TextInput
+                value={phone}
+                onChangeText={(t) => {
+                  setError("");
+                  setPhone(t.replace(/\D/g, "").slice(0, PHONE_LENGTH));
+                }}
+                keyboardType="number-pad"
+                placeholder="98765 43210"
+                placeholderTextColor="#999999"
+                maxLength={PHONE_LENGTH}
+                autoFocus
+                className="flex-1 font-jakarta text-[16px] text-foreground"
+                accessibilityLabel="Mobile number"
+              />
+            </View>
+
+            {error ? (
+              <Text className="mt-3 font-jakarta text-[13px] text-destructive">{error}</Text>
+            ) : null}
+          </View>
+
+          <View className="gap-4 px-6 pb-10">
+            <Button disabled={!canContinue || loading} onPress={handleContinue}>
+              {loading ? "Sending..." : "Continue"}
+            </Button>
+
+            <Text className="text-center font-jakarta text-[12px] leading-[18px] text-muted-foreground">
+              By continuing, you agree to our{" "}
+              <Text className="font-jakarta-semibold text-[12px] text-foreground">Terms</Text> and{" "}
+              <Text className="font-jakarta-semibold text-[12px] text-foreground">Privacy Policy</Text>
+            </Text>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
   );

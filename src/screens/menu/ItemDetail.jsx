@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Alert, Image, Pressable, ScrollView, View } from "react-native";
-import { ArrowLeft, ArrowRight, Heart, Utensils } from "lucide-react-native";
+import { ArrowRight, Heart, Utensils } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useFeed } from "@/context/FeedContext";
@@ -9,6 +9,7 @@ import Card from "@/components/ui/Card";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
 import DiscardCartDialog from "@/components/cart/DiscardCartDialog";
+import PageHeader from "@/components/customer/PageHeader";
 import ItemChoiceCard from "@/components/menu/ItemChoiceCard";
 import QuantityStepper from "@/components/menu/QuantityStepper";
 import { cartLineFor } from "@/data/cart";
@@ -185,40 +186,30 @@ export default function ItemDetail({ navigation, route }) {
             <Utensils size={44} color={accent.icon} strokeWidth={1.5} />
           )}
 
-          <View
-            style={{ paddingTop: insets.top + 8 }}
-            className="absolute inset-x-0 top-0 flex-row items-center justify-between px-5"
-          >
-            <Pressable
-              onPress={() => navigation.goBack()}
-              style={{ backgroundColor: accent.icon }}
-              className="size-12 items-center justify-center rounded-full shadow-md shadow-black/25"
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-            >
-              <ArrowLeft size={22} color="#FFFFFF" />
-            </Pressable>
-
-            {/* Saved dishes have nowhere to live yet — the favourites store is
-                keyed by storefront — so the heart is this screen's own state
-                until an item-level list exists. */}
-            <Pressable
-              onPress={handleToggleFavorite}
-              className="h-12 flex-row items-center gap-2 rounded-full bg-card px-5 shadow-md shadow-black/25"
-              accessibilityRole="button"
-              accessibilityState={{ selected: saved }}
-              accessibilityLabel={saved ? "Remove from saved dishes" : "Save this dish"}
-            >
-              <Heart
-                size={20}
-                color={accent.icon}
-                fill={saved ? accent.icon : "transparent"}
-              />
-              <Text className="font-jakarta-semibold text-[15px] leading-[20px] text-foreground">
-                Save
-              </Text>
-            </Pressable>
-          </View>
+          {/* Saved dishes have nowhere to live yet — the favourites store is
+              keyed by storefront — so the heart is this screen's own state
+              until an item-level list exists. */}
+          <PageHeader
+            variant="floating"
+            backStyle="circle"
+            iconColor="#FFFFFF"
+            circleColor={accent.icon}
+            topOffset={insets.top + 8}
+            trailing={
+              <Pressable
+                onPress={handleToggleFavorite}
+                className="h-12 flex-row items-center gap-2 rounded-full bg-card px-5 shadow-md shadow-black/25"
+                accessibilityRole="button"
+                accessibilityState={{ selected: saved }}
+                accessibilityLabel={saved ? "Remove from saved dishes" : "Save this dish"}
+              >
+                <Heart size={20} color={accent.icon} fill={saved ? accent.icon : "transparent"} />
+                <Text className="font-jakarta-semibold text-[15px] leading-[20px] text-foreground">
+                  Save
+                </Text>
+              </Pressable>
+            }
+          />
         </View>
 
         <View className="px-4 pt-4">

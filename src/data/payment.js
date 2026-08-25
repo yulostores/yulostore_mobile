@@ -60,11 +60,3 @@ export function apiMethodFor(id) {
 // Cash on delivery is a first-class path here, not a fallback — it's the one that
 // completes without a gateway, so it's what the screen opens on.
 export const DEFAULT_METHOD_ID = "cod";
-
-// Every other surface prints whole rupees (`formatPrice`), because a bill to the
-// paisa reads like a rounding error. The pay button is the exception: this is
-// the figure that leaves the customer's account, and payment screens state it
-// exactly.
-export function formatAmount(value) {
-  return `₹${Number(value ?? 0).toFixed(2)}`;
-}

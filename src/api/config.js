@@ -27,7 +27,16 @@ function devServerApiBase() {
   return host ? `http://${host}:3000` : null;
 }
 
-export const API_BASE = (__DEV__ && devServerApiBase()) || process.env.EXPO_PUBLIC_API_BASE || DEV_FALLBACK;
+// Stripped of any trailing slash: client.js builds the request baseURL as
+// `${API_BASE}/api`, plain string concatenation rather than axios's own
+// baseURL-joining — a trailing slash here (easy to paste in from a browser
+// address bar) survives straight into a literal "//api" and every request
+// 404s, since Express treats that as a different path than "/api".
+export const API_BASE = (
+  (__DEV__ && devServerApiBase()) ||
+  process.env.EXPO_PUBLIC_API_BASE ||
+  DEV_FALLBACK
+).replace(/\/+$/, "");
 
 export function formatImageUrl(url) {
   if (!url) return null;
