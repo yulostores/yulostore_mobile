@@ -76,20 +76,20 @@ export default function OnboardingStep2({ onNext }) {
 
       <View className="flex-1 items-center justify-center">
         <Animated.Image
-          entering={ZoomIn.springify().damping(14)}
+          entering={ZoomIn.duration(450).easing(Easing.out(Easing.cubic))}
           source={boxIllustration}
           style={{ width: illustrationWidth, height: illustrationWidth * ILLUSTRATION_ASPECT }}
           resizeMode="contain"
         />
 
         <View className="px-10 items-center">
-          <Animated.View entering={FadeInDown.delay(150).springify().damping(16)}>
+          <Animated.View entering={FadeInDown.delay(150).duration(400).easing(Easing.out(Easing.cubic))}>
             <Text className="mt-6 text-center font-jakarta-extrabold text-[26px] uppercase leading-[32px] tracking-tight text-[#0F172A]">
               Everything{"\n"}Delivered
             </Text>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.delay(300).springify().damping(16)}>
+          <Animated.View entering={FadeInDown.delay(300).duration(400).easing(Easing.out(Easing.cubic))}>
             <Text className="mt-4 text-center font-jakarta text-[15px] leading-[22px] text-[#64748B]">
               From meals and groceries to gifts, toys, bags, and more—all in one app.
             </Text>

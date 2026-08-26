@@ -425,7 +425,7 @@ export default function Menu({ navigation, menu, restaurantName }) {
           jump button and the cart bar correct even if either one's height
           changes later, instead of two hand-tuned pixel offsets drifting out
           of sync with each other. */}
-      <View className={cn("absolute inset-x-[7px]", cart && !cartBarDismissed ? "bottom-2" : "bottom-4")}>
+      <View className={cn("absolute inset-x-9", cart && !cartBarDismissed ? "bottom-6" : "bottom-4")}>
         <View className={cn("items-center", cart && !cartBarDismissed && "mb-3")}>
           <Button
             onPress={() => setIndexOpen(true)}

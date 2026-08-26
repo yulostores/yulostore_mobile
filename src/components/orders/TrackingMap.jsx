@@ -144,9 +144,9 @@ export default function TrackingMap({ accent, onBack }) {
           accessibilityRole="button"
           accessibilityLabel="Go back"
           style={{ backgroundColor: accent.icon }}
-          className="absolute left-5 top-4 size-12 items-center justify-center rounded-full shadow-lg shadow-black/25"
+          className="absolute left-4 top-4 size-10 items-center justify-center rounded-full shadow-lg shadow-black/25"
         >
-          <ArrowLeft size={22} color="#FFFFFF" strokeWidth={2.4} />
+          <ArrowLeft size={19} color="#FFFFFF" strokeWidth={2.4} />
         </Pressable>
       ) : null}
     </View>

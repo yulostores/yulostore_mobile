@@ -1,5 +1,5 @@
 import { View } from "react-native";
-import { ChevronDown, MapPin, QrCode, User } from "lucide-react-native";
+import { ChevronDown, MapPin, User } from "lucide-react-native";
 
 import useResponsive from "@/hooks/useResponsive";
 import PressableScale from "@/components/ui/PressableScale";
@@ -9,7 +9,7 @@ import { PRESS_SCALE } from "@/lib/motion";
 // Figma "Header - Top App Bar" (250:597). components/customer/PageHeader is a
 // back-and-title bar, so home — which has nothing to go back to — gets its own
 // address + profile header instead.
-export default function HomeHeader({ address, onPressAddress, onPressScan, onPressProfile }) {
+export default function HomeHeader({ address, onPressAddress, onPressProfile }) {
   const { gutter } = useResponsive();
 
   return (
@@ -39,24 +39,13 @@ export default function HomeHeader({ address, onPressAddress, onPressScan, onPre
                 gives every handset the longest address it can actually show. */}
             <Text
               numberOfLines={1}
-              className="shrink font-jakarta-semibold text-[14px] leading-[18px] text-foreground"
+              className="shrink font-jakarta-semibold text-[11px] leading-[14px] text-foreground"
             >
               {address}
             </Text>
             <ChevronDown size={12} color="#1A1A1A" />
           </View>
         </View>
-      </PressableScale>
-
-      <PressableScale
-        onPress={onPressScan}
-        hitSlop={8}
-        scale={PRESS_SCALE.tight}
-        className="ml-2 size-11 items-center justify-center rounded-full bg-primary-tint"
-        accessibilityRole="button"
-        accessibilityLabel="Scan QR code"
-      >
-        <QrCode size={20} color="#F0592A" />
       </PressableScale>
 
       <PressableScale

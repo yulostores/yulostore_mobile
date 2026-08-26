@@ -65,18 +65,18 @@ export default function SavedAddresses() {
         <Pressable
           onPress={() => setAdding(true)}
           style={{ backgroundColor: accent.tint }}
-          className="mx-5 mt-6 h-14 flex-row items-center gap-3 rounded-[20px] px-5"
+          className="mx-5 mt-5 h-12 flex-row items-center gap-2.5 rounded-2xl px-4"
           accessibilityRole="button"
           accessibilityLabel="Add a new address"
         >
-          <Plus size={22} color={accent.icon} strokeWidth={2.4} />
+          <Plus size={19} color={accent.icon} strokeWidth={2.4} />
 
-          <Text style={{ color: accent.icon }} className="font-jakarta-semibold text-[18px] leading-[25px]">
+          <Text style={{ color: accent.icon }} className="font-jakarta-semibold text-[15px] leading-[21px]">
             Add a new address
           </Text>
         </Pressable>
 
-        <View className="mt-5 gap-4 px-5">
+        <View className="mt-4 gap-3 px-5">
           {addresses.length ? (
             addresses.map((address) => (
               <AddressCard
@@ -93,7 +93,7 @@ export default function SavedAddresses() {
               />
             ))
           ) : (
-            <Text className="mt-10 px-3 text-center font-jakarta text-[16px] leading-[23px] text-muted-foreground">
+            <Text className="mt-10 px-3 text-center font-jakarta text-[15px] leading-[21px] text-muted-foreground">
               You haven't saved an address yet. Add one so your orders know where to go.
             </Text>
           )}

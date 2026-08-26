@@ -152,7 +152,7 @@ export default function SearchResults({ navigation, route }) {
 
       {cart && !cartBarDismissed ? (
         <StickyCartBar
-          className="absolute inset-x-[7px] bottom-2"
+          className="absolute inset-x-9 bottom-6"
           restaurantName={cart.restaurantName}
           restaurantImage={cartRestaurant}
           itemCount={cart.itemCount}

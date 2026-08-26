@@ -60,13 +60,13 @@ export default function VegFleetPreference({ navigation }) {
       >
         <PageHeader title="Veg-fleet preference" />
 
-        <View className="mt-6 gap-4 px-5">
+        <View className="mt-5 gap-3 px-5">
           {isLoading ? (
             <ActivityIndicator size="large" color={accent.icon} className="mt-10" />
           ) : (
-            <Card className="w-full p-5">
+            <Card className="w-full p-4">
               <View className="flex-row items-center justify-between gap-3">
-                <Text className="flex-1 font-jakarta-bold text-[19px] leading-[26px] text-foreground">
+                <Text className="flex-1 font-jakarta-bold text-[15px] leading-[20px] text-foreground">
                   Default to Veg-only fleet
                 </Text>
 
@@ -79,7 +79,7 @@ export default function VegFleetPreference({ navigation }) {
                 />
               </View>
 
-              <Text className="mt-2 font-jakarta text-[16px] leading-[23px] text-muted-foreground">
+              <Text className="mt-1.5 font-jakarta text-[13px] leading-[18px] text-muted-foreground">
                 When enabled, the veg-only fleet toggle at checkout will be on by default for your orders.
               </Text>
             </Card>

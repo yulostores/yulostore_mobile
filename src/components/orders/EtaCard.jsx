@@ -25,15 +25,15 @@ export default function EtaCard({ order, vegOnly, className }) {
 
   return (
     <Card className={className}>
-      <View className="flex-row items-center gap-2 self-start rounded-full bg-[#E7EEFB] px-3 py-1.5">
-        <View className="size-2.5 rounded-full bg-[#1A56C4]" />
+      <View className="flex-row items-center gap-1.5 self-start rounded-full bg-[#E7EEFB] px-2.5 py-1">
+        <View className="size-2 rounded-full bg-[#1A56C4]" />
 
-        <Text className="font-jakarta-bold text-[13px] leading-[18px] text-[#12448F]">
-          On the way
+        <Text className="font-jakarta-bold text-[11px] leading-[14px] tracking-wide text-[#12448F]">
+          ON THE WAY
         </Text>
       </View>
 
-      <Text className="mt-3 font-jakarta-extrabold text-[22px] leading-[30px] text-foreground">
+      <Text className="mt-2.5 font-jakarta-bold text-[17px] leading-[23px] text-foreground">
         Your order is on the way
       </Text>
 
@@ -44,48 +44,48 @@ export default function EtaCard({ order, vegOnly, className }) {
           real figure to give. */}
       {order.etaMinutes ? (
         <>
-          <Text className="mt-3 font-jakarta text-[15px] leading-[21px] text-muted-foreground">
+          <Text className="mt-2.5 font-jakarta-medium text-[12px] leading-[16px] text-muted-foreground">
             Arriving in
           </Text>
 
-          <Text className="font-jakarta-extrabold text-[38px] leading-[46px] text-foreground">
+          <Text className="font-jakarta-extrabold text-[30px] leading-[36px] text-foreground">
             {order.etaMinutes} mins
           </Text>
         </>
       ) : (
-        <Text className="mt-3 font-jakarta-semibold text-[17px] leading-[24px] text-muted-foreground">
+        <Text className="mt-2.5 font-jakarta-semibold text-[13.5px] leading-[19px] text-muted-foreground">
           We'll show an arrival time once your order is picked up
         </Text>
       )}
 
-      <View className="mt-3 flex-row items-center gap-3">
+      <View className="mt-3 flex-row items-center gap-2.5 border-t border-border pt-3">
         <View
           style={{ backgroundColor: GLYPH_TILE }}
-          className="size-11 items-center justify-center rounded-2xl"
+          className="size-9 items-center justify-center rounded-xl"
         >
-          <Store size={22} color={vegOnly ? "#2E7D32" : "#E8480C"} strokeWidth={2.2} />
+          <Store size={18} color={vegOnly ? "#2E7D32" : "#E8480C"} strokeWidth={2.2} />
         </View>
 
         <View className="flex-1">
           <Text
             numberOfLines={1}
-            className="font-jakarta-semibold text-[17px] leading-[24px] text-foreground"
+            className="font-jakarta-semibold text-[14px] leading-[19px] text-foreground"
           >
             {restaurant.name}
           </Text>
 
-          <View className="flex-row items-center gap-1.5">
-            <Text className="font-jakarta text-[14px] leading-[20px] text-muted-foreground">
+          <View className="flex-row items-center gap-1">
+            <Text className="font-jakarta text-[12px] leading-[16px] text-muted-foreground">
               {restaurant.rating}
             </Text>
 
             <Star
-              size={13}
+              size={11}
               color={vegOnly ? "#1A1A1A" : "#F5A524"}
               fill={vegOnly ? "#1A1A1A" : "#F5A524"}
             />
 
-            <Text className="font-jakarta text-[14px] leading-[20px] text-muted-foreground">
+            <Text className="font-jakarta text-[12px] leading-[16px] text-muted-foreground">
               • {cuisineFor(restaurant, vegOnly)}
             </Text>
           </View>

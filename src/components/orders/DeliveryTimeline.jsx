@@ -18,7 +18,7 @@ const LIVE = { ring: "#E3EDFB", ink: "#1A56C4" };
 const RAIL_DONE = "#2E7D32";
 const RAIL_AHEAD = "#E8E2D9";
 
-const DOT_SIZE = 26;
+const DOT_SIZE = 22;
 
 function StageDot({ state }) {
   if (state === "done") {
@@ -27,7 +27,7 @@ function StageDot({ state }) {
         style={{ width: DOT_SIZE, height: DOT_SIZE, backgroundColor: DONE.ring }}
         className="items-center justify-center rounded-full"
       >
-        <Check size={15} color={DONE.ink} strokeWidth={3} />
+        <Check size={13} color={DONE.ink} strokeWidth={3} />
       </View>
     );
   }
@@ -38,7 +38,7 @@ function StageDot({ state }) {
         style={{ width: DOT_SIZE, height: DOT_SIZE, backgroundColor: LIVE.ring }}
         className="items-center justify-center rounded-full"
       >
-        <View style={{ backgroundColor: LIVE.ink }} className="size-2.5 rounded-full" />
+        <View style={{ backgroundColor: LIVE.ink }} className="size-2 rounded-full" />
       </View>
     );
   }
@@ -83,11 +83,11 @@ export default function DeliveryTimeline({ stage, timeline = [], className }) {
 
   return (
     <Card className={className}>
-      <Text className="font-jakarta-extrabold text-[20px] leading-[28px] text-foreground">
+      <Text className="font-jakarta-bold text-[16px] leading-[22px] text-foreground">
         Delivery timeline
       </Text>
 
-      <View className="mt-4">
+      <View className="mt-3.5">
         {TIMELINE.map((step, index) => {
           const state = index < current ? "done" : index === current ? "live" : "ahead";
           const last = index === TIMELINE.length - 1;
@@ -103,24 +103,24 @@ export default function DeliveryTimeline({ stage, timeline = [], className }) {
                 {last ? null : (
                   <View
                     style={{ backgroundColor: index < current ? RAIL_DONE : RAIL_AHEAD }}
-                    className="w-[3px] flex-1 rounded-full"
+                    className="w-[2px] flex-1 rounded-full"
                   />
                 )}
               </View>
 
-              <View className={last ? "flex-1 pl-3.5" : "flex-1 pb-6 pl-3.5"}>
+              <View className={last ? "flex-1 pl-3" : "flex-1 pb-4 pl-3"}>
                 <Text
                   className={
                     state === "ahead"
-                      ? "font-jakarta-semibold text-[19px] leading-[26px] text-muted-foreground"
-                      : "font-jakarta-semibold text-[19px] leading-[26px] text-foreground"
+                      ? "font-jakarta-semibold text-[14px] leading-[19px] text-muted-foreground"
+                      : "font-jakarta-semibold text-[14px] leading-[19px] text-foreground"
                   }
                 >
                   {step.label}
                 </Text>
 
                 {timeByStage[step.id] ? (
-                  <Text className="font-jakarta text-[15px] leading-[21px] text-muted-foreground">
+                  <Text className="font-jakarta text-[12px] leading-[16px] text-muted-foreground">
                     {timeByStage[step.id]}
                   </Text>
                 ) : null}
@@ -129,7 +129,7 @@ export default function DeliveryTimeline({ stage, timeline = [], className }) {
                     is in progress — "Tracking live" under a stage the order has
                     already left would be a lie about the map above. */}
                 {state === "live" && step.note ? (
-                  <Text className="font-jakarta-medium text-[15px] leading-[21px] text-[#1A56C4]">
+                  <Text className="font-jakarta-medium text-[12px] leading-[16px] text-[#1A56C4]">
                     {step.note}
                   </Text>
                 ) : null}

@@ -72,7 +72,7 @@ export default function OrderTracking({ navigation, route }) {
             }
           : null,
         lines: (liveOrder.orderItems ?? []).map((item, index) => ({
-          id: item.menuItemId ?? index,
+          id: index,
           name: item.name,
           price: item.price,
           quantity: item.quantity,
@@ -119,11 +119,11 @@ export default function OrderTracking({ navigation, route }) {
           // A seeded demo order used to be rendered here whenever the real one
           // failed to load, which showed a stranger's delivery as though it were
           // the customer's own.
-          <View className="mt-10 items-center justify-center gap-2 px-10">
-            <Text className="text-center font-jakarta-bold text-[17px] leading-[24px] text-foreground">
+          <View className="mt-10 items-center justify-center gap-1.5 px-10">
+            <Text className="text-center font-jakarta-bold text-[15px] leading-[21px] text-foreground">
               {isError ? "Couldn't load this order" : "Nothing to track"}
             </Text>
-            <Text className="text-center font-jakarta text-[14px] leading-[20px] text-muted-foreground">
+            <Text className="text-center font-jakarta text-[13px] leading-[18px] text-muted-foreground">
               {isError
                 ? "Check your connection and try again."
                 : "Open an order from your history to follow it."}
@@ -136,14 +136,14 @@ export default function OrderTracking({ navigation, route }) {
             <DeliveryTimeline
               stage={order.stage}
               timeline={liveOrder.timeline}
-              className="mt-4"
+              className="mt-3"
             />
 
             {order.partner && (
-              <PartnerCard partner={order.partner} accent={accent} onCall={call} onChat={chat} className="mt-4" />
+              <PartnerCard partner={order.partner} accent={accent} onCall={call} onChat={chat} className="mt-3" />
             )}
 
-            <OrderSummaryCard order={order} accent={accent} vegOnly={vegOnly} className="mt-4" />
+            <OrderSummaryCard order={order} accent={accent} vegOnly={vegOnly} className="mt-3" />
           </View>
         )}
       </ScrollView>

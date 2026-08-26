@@ -15,16 +15,16 @@ import Text from "@/components/ui/Text";
 export default function PartnerCard({ partner, accent, onCall, onChat, className }) {
   return (
     <Card className={className}>
-      <Text className="font-jakarta-extrabold text-[20px] leading-[28px] text-foreground">
+      <Text className="font-jakarta-bold text-[16px] leading-[22px] text-foreground">
         Delivery partner
       </Text>
 
-      <View className="mt-4 flex-row items-center gap-3.5">
+      <View className="mt-3 flex-row items-center gap-3">
         <View
           style={{ backgroundColor: accent.icon }}
-          className="size-14 items-center justify-center rounded-full"
+          className="size-12 items-center justify-center rounded-full"
         >
-          <Text className="font-jakarta-bold text-[18px] leading-[24px] text-white">
+          <Text className="font-jakarta-bold text-[15px] leading-[20px] text-white">
             {partner.initials}
           </Text>
         </View>
@@ -32,29 +32,30 @@ export default function PartnerCard({ partner, accent, onCall, onChat, className
         <View className="flex-1">
           <Text
             numberOfLines={1}
-            className="font-jakarta-semibold text-[19px] leading-[26px] text-foreground"
+            className="font-jakarta-semibold text-[15px] leading-[20px] text-foreground"
           >
             {partner.name}
           </Text>
 
-          <View className="flex-row items-center gap-1.5">
-            <Text className="font-jakarta text-[15px] leading-[21px] text-muted-foreground">
+          <View className="flex-row items-center gap-1">
+            <Text className="font-jakarta text-[12px] leading-[16px] text-muted-foreground">
               {partner.rating}
             </Text>
 
-            <Star size={13} color="#F5A524" fill="#F5A524" />
+            <Star size={11} color="#F5A524" fill="#F5A524" />
 
-            <Text className="font-jakarta text-[15px] leading-[21px] text-muted-foreground">
+            <Text className="font-jakarta text-[12px] leading-[16px] text-muted-foreground">
               • {partner.deliveries}
             </Text>
           </View>
         </View>
       </View>
 
-      <View className="mt-4 flex-row gap-3">
+      <View className="mt-3.5 flex-row gap-2.5">
         <Button
           onPress={onCall}
           variant="secondary"
+          size="sm"
           style={{ borderColor: accent.icon }}
           className="flex-1"
           accessibilityLabel={`Call ${partner.name}`}
@@ -62,11 +63,11 @@ export default function PartnerCard({ partner, accent, onCall, onChat, className
           {/* Button prints a bare child as text; an icon beside a label has to
               arrive as one element, hence the fragment. */}
           <>
-            <Phone size={18} color={accent.icon} strokeWidth={2.2} />
+            <Phone size={15} color={accent.icon} strokeWidth={2.2} />
 
             <Text
               style={{ color: accent.icon }}
-              className="font-jakarta-bold text-[16px] leading-[22px]"
+              className="font-jakarta-bold text-[13.5px] leading-[18px]"
             >
               Call
             </Text>
@@ -76,16 +77,17 @@ export default function PartnerCard({ partner, accent, onCall, onChat, className
         <Button
           onPress={onChat}
           variant="secondary"
+          size="sm"
           style={{ borderColor: accent.icon }}
           className="flex-1"
           accessibilityLabel={`Chat with ${partner.name}`}
         >
           <>
-            <MessageSquare size={18} color={accent.icon} strokeWidth={2.2} />
+            <MessageSquare size={15} color={accent.icon} strokeWidth={2.2} />
 
             <Text
               style={{ color: accent.icon }}
-              className="font-jakarta-bold text-[16px] leading-[22px]"
+              className="font-jakarta-bold text-[13.5px] leading-[18px]"
             >
               Chat
             </Text>

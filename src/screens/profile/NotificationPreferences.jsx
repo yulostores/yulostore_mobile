@@ -90,30 +90,30 @@ export default function NotificationPreferences({ navigation }) {
       >
         <PageHeader title="Notification preferences" />
 
-        <View className="mt-6 gap-4 px-5">
+        <View className="mt-5 gap-3 px-5">
           {isLoading ? (
             <ActivityIndicator size="large" color={accent.icon} className="mt-10" />
           ) : (
             <>
-              <Card className="w-full p-5">
+              <Card className="w-full p-4">
                 <View className="flex-row items-center justify-between gap-3">
-                  <Text className="flex-1 font-jakarta-bold text-[19px] leading-[26px] text-foreground">
+                  <Text className="flex-1 font-jakarta-bold text-[15px] leading-[20px] text-foreground">
                     Push notifications
                   </Text>
 
-                  <View className="rounded-full bg-muted px-4 py-1.5">
-                    <Text className="font-jakarta-medium text-[15px] leading-[21px] text-muted-foreground">
+                  <View className="rounded-full bg-muted px-3 py-1">
+                    <Text className="font-jakarta-medium text-[12px] leading-[16px] text-muted-foreground">
                       Off
                     </Text>
                   </View>
                 </View>
 
-                <Text className="mt-2 font-jakarta text-[16px] leading-[23px] text-muted-foreground">
+                <Text className="mt-1.5 font-jakarta text-[13px] leading-[18px] text-muted-foreground">
                   To enable notifications, go to{" "}
                   <Text
                     onPress={() => Linking.openSettings?.()?.catch?.(() => {})}
                     style={{ color: accent.icon }}
-                    className="font-jakarta-semibold text-[16px] leading-[23px]"
+                    className="font-jakarta-semibold text-[13px] leading-[18px]"
                     accessibilityRole="link"
                   >
                     settings
@@ -121,9 +121,9 @@ export default function NotificationPreferences({ navigation }) {
                 </Text>
               </Card>
 
-              <Card className="w-full p-5">
+              <Card className="w-full p-4">
                 <View className="flex-row items-center justify-between gap-3">
-                  <Text className="flex-1 font-jakarta-bold text-[19px] leading-[26px] text-foreground">
+                  <Text className="flex-1 font-jakarta-bold text-[15px] leading-[20px] text-foreground">
                     Orders and purchases
                   </Text>
 
@@ -137,7 +137,7 @@ export default function NotificationPreferences({ navigation }) {
                   />
                 </View>
 
-                <Text className="mt-2 font-jakarta text-[16px] leading-[23px] text-muted-foreground">
+                <Text className="mt-1.5 font-jakarta text-[13px] leading-[18px] text-muted-foreground">
                   Receive updates related to your order status, memberships, table bookings and more
                 </Text>
               </Card>

@@ -11,8 +11,7 @@ import PageHeader from "@/components/customer/PageHeader";
 import SettingsRow from "@/components/customer/SettingsRow";
 import { accentFor } from "@/lib/accent";
 
-const SCROLL_PADDING = 32;
-const AVATAR = 68;
+const AVATAR = 56;
 
 // The account is the phone number it was opened with, so the identity card falls
 // back to the number rather than to an invented name.
@@ -76,38 +75,43 @@ export default function Profile({ navigation }) {
 
   // No bottom edge — a tab screen now, and the tab bar below it already
   // carries the bottom safe-area inset.
+  //
+  // A ScrollView, not a plain column: the row count grows by one in dev
+  // builds (the feature-flags row) and shrinks the room left for everything
+  // below it, so a fixed column risked crushing "Log out" up against "Help &
+  // support" — or worse, right off the bottom — on shorter screens. The
+  // `flexGrow` content container plus the spacer below the menu still pins
+  // "Log out" to the bottom when everything fits; the spacer's `minHeight`
+  // guarantees breathing room between the two even when it doesn't.
   return (
     <Screen edges={["top"]}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: SCROLL_PADDING }}
-      >
-        <PageHeader title="Profile" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+        <PageHeader title="Profile" size="lg" />
 
-        <View className="mt-6 px-5">
-          <Card className="w-full flex-row items-center gap-4 p-5">
+        <View className="mt-5 px-5">
+          <Card className="w-full flex-row items-center gap-3 p-4">
             <View
               style={{ width: AVATAR, height: AVATAR, backgroundColor: accent.icon }}
               className="items-center justify-center rounded-full"
             >
-              <Text className="font-jakarta-bold text-[26px] leading-[34px] text-white">
+              <Text className="font-jakarta-bold text-[21px] leading-[28px] text-white">
                 {initialFor(name)}
               </Text>
             </View>
 
             <View className="flex-1">
-              <Text numberOfLines={1} className="font-jakarta-bold text-[22px] leading-[30px] text-foreground">
+              <Text numberOfLines={1} className="font-jakarta-bold text-[18px] leading-[24px] text-foreground">
                 {name}
               </Text>
 
-              <Text className="mt-0.5 font-jakarta text-[17px] leading-[24px] text-muted-foreground">
+              <Text className="mt-0.5 font-jakarta text-[14px] leading-[19px] text-muted-foreground">
                 {formatPhone(phone)}
               </Text>
             </View>
           </Card>
         </View>
 
-        <View className="mt-6 gap-4 px-5">
+        <View className="mt-5 gap-2.5 px-5">
           <SettingsRow label="Order history" icon={Clock} onPress={() => go("Orders")} />
 
           <SettingsRow label="Favorites" icon={Heart} onPress={() => go("Favourites")} />
@@ -131,10 +135,15 @@ export default function Profile({ navigation }) {
           ) : null}
 
           <SettingsRow label="Help & support" icon={LifeBuoy} onPress={() => go("Help")} />
+        </View>
 
+        <View style={{ flex: 1, minHeight: 24 }} />
+
+        <View className="px-5 pb-4">
           <SettingsRow
             label={signingOut ? "Logging out…" : "Log out"}
             icon={LogOut}
+            tone="destructive"
             onPress={signOut}
           />
         </View>

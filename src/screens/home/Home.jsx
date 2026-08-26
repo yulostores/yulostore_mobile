@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Image, RefreshControl, ScrollView, View } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
-import { useFeatureEnabled } from "@/context/FeatureFlagsContext";
+import { useFeature, useFeatureEnabled } from "@/context/FeatureFlagsContext";
 import { useFeed } from "@/context/FeedContext";
+import { fetchDeviceLocation } from "@/lib/location";
 import { useHomeFeed } from "@/hooks/useHomeFeed";
 import { useActiveOrder, useOrderSocket, useRestaurantNames } from "@/hooks/useOrders";
 import useResponsive from "@/hooks/useResponsive";
@@ -69,7 +70,41 @@ function RestaurantRow({ data, ratingTone, onSelect }) {
 
 export default function Home({ navigation }) {
   const { gutter } = useResponsive();
-  const { deliveryLocation } = useCustomerAuth();
+  const { deliveryLocation, setDeliveryLocation } = useCustomerAuth();
+  const locationFeature = useFeature("deviceLocation");
+  const [locatingHeader, setLocatingHeader] = useState(false);
+
+  // A customer can land here with no delivery address yet (a saved address
+  // synced from the server, but the on-device cache that mirrors it was
+  // cleared — see CustomerAuthContext). Rather than a header that just says
+  // "set your address", try a silent GPS fix the same way LocationSetup does,
+  // and fall back to the city default if the fix fails or the feature/module
+  // isn't available. Runs once — a fix that comes back (or a manual pick
+  // later) replaces `deliveryLocation`, which is what unmounts this effect's
+  // reason for being here.
+  useEffect(() => {
+    if (deliveryLocation || !locationFeature.enabled) return;
+    let cancelled = false;
+    setLocatingHeader(true);
+    fetchDeviceLocation()
+      .then((location) => {
+        if (!cancelled) setDeliveryLocation(location);
+      })
+      .catch(() => {
+        // Left null on failure — the "Bangalore" fallback below covers display,
+        // and staying null (instead of locking in a fake default) lets a later
+        // retry or manual pick still win.
+      })
+      .finally(() => {
+        if (!cancelled) setLocatingHeader(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deliveryLocation]);
+
+  const headerAddress = deliveryLocation?.label ?? (locatingHeader ? "Fetching location…" : "Bangalore");
   // The field here is a doorway — its mic hands off to the search screen, which
   // is where the recognizer actually runs. Both have to agree about whether the
   // mic is shown at all, or this one opens a screen with nothing to listen with.
@@ -216,9 +251,8 @@ export default function Home({ navigation }) {
           />
 
           <HomeHeader
-            address={deliveryLocation?.label ?? "Set your delivery address"}
+            address={headerAddress}
             onPressAddress={() => navigation?.navigate("Location")}
-            onPressScan={() => navigation?.navigate("ScanQr")}
             onPressProfile={() => navigation?.navigate("Profile")}
           />
 
@@ -376,7 +410,7 @@ export default function Home({ navigation }) {
           />
         ) : cart && !cartBarDismissed ? (
           <StickyCartBar
-            className="mx-[7px]"
+            className="mx-6"
             restaurantName={cart.restaurantName}
             restaurantImage={cartRestaurant}
             itemCount={cart.itemCount}

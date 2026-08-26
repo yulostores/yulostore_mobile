@@ -38,14 +38,24 @@ export default function StickyCartBar({
       style={style}
       // No `w-full` here: every caller positions this with `inset-x`, and a
       // width set alongside left/right wins in Yoga — the bar would hang off
-      // the right edge by however much the left inset was.
+      // the right edge by however much the left inset was. Callers now use a
+      // generous inset (not the old near-zero one) so the pill reads as a
+      // floating card with visible breathing room from the screen edges,
+      // rather than a bar stretching wall-to-wall.
       //
       // `overflow-hidden` lives on the inner wrapper, not here — it and a box
       // shadow can't share a view, since clipping to bounds clips the shadow
       // along with it.
-      className={cn("rounded-full shadow-md shadow-black/10", className)}
+      //
+      // Fixed height + a concrete pixel radius, not `rounded-full` (a huge
+      // arbitrary radius) on an auto-sized box — Android can massively
+      // mis-render that combination (elevation + a 9999 radius on a view
+      // with no explicit height), ballooning the pill into a huge blob far
+      // past its actual content. A pinned height everything inside centers
+      // against makes the box's true size unambiguous.
+      className={cn("h-[80px] rounded-[40px] shadow-md shadow-black/10", className)}
     >
-      <View className="flex-row items-center overflow-hidden rounded-full border border-border px-[13.5px] py-[10.5px]">
+      <View className="h-[80px] flex-row items-center overflow-hidden rounded-[40px] border border-border px-3.5">
         {/* The bar floats over scrolling content (dish images, restaurant
             thumbnails) that can be busy or high-contrast — a flat fill wasn't
             enough to keep the name and "View cart" readable, so the strip of
@@ -53,49 +63,59 @@ export default function StickyCartBar({
             above clips the blur to the pill's rounded shape. */}
         <BlurBackdrop />
 
-        <PressableScale
-          onPress={onViewMenu}
-          scale={PRESS_SCALE.subtle}
-          className="flex-1 flex-row items-center gap-3"
-          accessibilityRole="button"
-          accessibilityLabel={`View menu for ${restaurantName}`}
-        >
-          <Image
-            source={restaurantImage}
-            style={{ width: 44, height: 44, borderRadius: 22 }}
-            resizeMode="cover" resizeMethod="resize"
-          />
+        {/* Equal-flex left/right slots around the fixed-size button below is
+            what actually centers it — the button itself has no flex, so it
+            sits wherever the two slots around it leave equal room, however
+            much either side's content is willing to give up. A plain View
+            here (not PressableScale) stretches to this slot's width for
+            free via RN's default column-parent `alignItems: stretch`, so the
+            name/eyebrow text truncates against the real available width
+            instead of the row's full unclipped content. */}
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <PressableScale
+            onPress={onViewMenu}
+            scale={PRESS_SCALE.subtle}
+            className="flex-row items-center gap-2"
+            accessibilityRole="button"
+            accessibilityLabel={`View menu for ${restaurantName}`}
+          >
+            <Image
+              source={restaurantImage}
+              style={{ width: 42, height: 42, borderRadius: 21 }}
+              resizeMode="cover" resizeMethod="resize"
+            />
 
-          <View className="flex-1">
-            <Text
-              numberOfLines={1}
-              className="font-jakarta-bold text-[14px] leading-[21px] text-foreground"
-            >
-              {restaurantName}
-            </Text>
-
-            <View className="flex-row items-center gap-0.5">
+            <View className="min-w-0 flex-1 shrink">
               <Text
-                style={{ color: accent.strong }}
-                className="font-jakarta-medium text-[12px] leading-[18px]"
+                numberOfLines={1}
+                className="font-jakarta-bold text-[14px] leading-[20px] text-foreground"
               >
-                View menu
+                {restaurantName}
               </Text>
-              <ChevronRight size={10} color={accent.strong} />
+
+              <View className="flex-row items-center gap-0.5">
+                <Text
+                  style={{ color: accent.strong }}
+                  className="font-jakarta-medium text-[12px] leading-[18px]"
+                >
+                  View menu
+                </Text>
+                <ChevronRight size={10} color={accent.strong} />
+              </View>
             </View>
-          </View>
-        </PressableScale>
+          </PressableScale>
+        </View>
 
         <Button
           onPress={onViewCart}
-          className={cn("ml-2 h-12 flex-col gap-0 px-6", vegOnly && "bg-[#43A047] shadow-[#43A047]/40")}
+          className={cn("h-12 flex-col gap-0 px-5", vegOnly && "bg-[#43A047] shadow-[#43A047]/40")}
           accessibilityLabel={`View cart, ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
         >
           <View className="items-center">
-            <Text className="text-center font-jakarta-bold text-[12px] leading-[20px] text-primary-foreground">
+            <Text className="text-center font-jakarta-bold text-[12px] leading-[18px] text-primary-foreground">
               View cart
             </Text>
-            <Text className="text-center font-jakarta-medium text-[8px] leading-[15px] text-primary-foreground opacity-90">
+            <Text className="text-center font-jakarta-medium text-[9px] leading-[14px] text-primary-foreground opacity-90">
               {itemCount} {itemCount === 1 ? "item" : "items"}
             </Text>
           </View>
@@ -104,16 +124,18 @@ export default function StickyCartBar({
         {/* This empties the cart rather than only hiding the bar, so the label
             says so — "dismiss" would promise the order was still there to come
             back to, and the cart is persisted now. */}
-        <PressableScale
-          onPress={onDismiss}
-          hitSlop={8}
-          scale={PRESS_SCALE.tight}
-          className="size-10 items-center justify-center rounded-full"
-          accessibilityRole="button"
-          accessibilityLabel={`Empty your cart from ${restaurantName}`}
-        >
-          <X size={15} color="#1A1A1A" />
-        </PressableScale>
+        <View style={{ flex: 1 }} className="items-end">
+          <PressableScale
+            onPress={onDismiss}
+            hitSlop={8}
+            scale={PRESS_SCALE.tight}
+            className="ml-1 size-9 items-center justify-center rounded-full"
+            accessibilityRole="button"
+            accessibilityLabel={`Empty your cart from ${restaurantName}`}
+          >
+            <X size={14} color="#1A1A1A" />
+          </PressableScale>
+        </View>
       </View>
     </Animated.View>
   );

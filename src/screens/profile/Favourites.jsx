@@ -11,6 +11,8 @@ import { withVegCuisines } from "@/data/restaurants";
 import { useFavorites } from "@/hooks/useUser";
 import { toRestaurantCard } from "@/lib/restaurant";
 
+const cartRestaurant = require("@/assets/home/cart-restaurant-avatar.png");
+
 const SCROLL_PADDING = 32;
 
 // Figma "29 · Favorites". The hearts toggled on the feed, read back as a list —
@@ -26,7 +28,7 @@ export default function Favourites({ navigation }) {
   const [pendingRestaurant, setPendingRestaurant] = useState(null);
 
   const saved = (remoteFavorites ?? []).map((restaurant) =>
-    withVegCuisines(toRestaurantCard(restaurant), vegOnly),
+    withVegCuisines(toRestaurantCard(restaurant, { fallbackImage: cartRestaurant }), vegOnly),
   );
 
   // The menu is fetched by id — passing only a name left this screen opening a
@@ -66,7 +68,7 @@ export default function Favourites({ navigation }) {
         {isLoading ? (
           <ActivityIndicator size="large" color="#FF5E00" className="mt-10" />
         ) : saved.length ? (
-          <View className="mt-6 gap-5 px-5">
+          <View className="mt-5 gap-3 px-5">
             {saved.map((restaurant) => (
               <FavouriteCard
                 key={restaurant.id}

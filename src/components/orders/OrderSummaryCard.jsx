@@ -20,48 +20,48 @@ const GLYPHS = { bowl: Soup, platter: HandPlatter };
 const GLYPH_TILE = "#FDECE4";
 const VEG_INK = "#2E7D32";
 
-const TILE_SIZE = 44;
+const TILE_SIZE = 38;
 
 export default function OrderSummaryCard({ order, accent, vegOnly, className }) {
   return (
     <Card className={className}>
       <View className="flex-row items-center justify-between gap-3">
-        <Text className="font-jakarta-extrabold text-[20px] leading-[28px] text-foreground">
+        <Text className="font-jakarta-bold text-[16px] leading-[22px] text-foreground">
           Order details
         </Text>
 
-        <Text className="font-jakarta text-[15px] leading-[21px] text-muted-foreground">
+        <Text className="font-jakarta text-[12px] leading-[16px] text-muted-foreground">
           {order.id}
         </Text>
       </View>
 
-      <View className="mt-3">
+      <View className="mt-2.5">
         {order.lines.map((line) => {
           const Glyph = GLYPHS[line.icon] ?? Utensils;
           const veg = lineIsVeg(line, vegOnly);
 
           return (
-            <View key={line.id} className="flex-row items-center gap-3 py-2.5">
+            <View key={line.id} className="flex-row items-center gap-2.5 py-2">
               <View
                 style={{ width: TILE_SIZE, height: TILE_SIZE, backgroundColor: GLYPH_TILE }}
-                className="items-center justify-center rounded-2xl"
+                className="items-center justify-center rounded-xl"
               >
-                <Glyph size={21} color={veg ? VEG_INK : accent.icon} strokeWidth={2.2} />
+                <Glyph size={18} color={veg ? VEG_INK : accent.icon} strokeWidth={2.2} />
               </View>
 
               <View className="flex-1">
-                <Text className="font-jakarta-semibold text-[16px] leading-[22px] text-foreground">
+                <Text className="font-jakarta-semibold text-[14px] leading-[19px] text-foreground">
                   {line.quantity}× {lineName(line, vegOnly)}
                 </Text>
 
                 {line.notes ? (
-                  <Text className="font-jakarta text-[14px] leading-[20px] text-muted-foreground">
+                  <Text className="font-jakarta text-[12px] leading-[16px] text-muted-foreground">
                     {line.notes}
                   </Text>
                 ) : null}
               </View>
 
-              <Text className="font-jakarta-semibold text-[16px] leading-[22px] text-foreground">
+              <Text className="font-jakarta-semibold text-[14px] leading-[19px] text-foreground">
                 {formatPrice(line.price * line.quantity)}
               </Text>
             </View>
@@ -72,12 +72,12 @@ export default function OrderSummaryCard({ order, accent, vegOnly, className }) 
       {/* The figure that left the account, stated as paid rather than payable —
           this screen can't take money, and a total that reads like a bill would
           invite a customer to think they still owe it. */}
-      <View className="mt-2 flex-row items-center justify-between rounded-2xl bg-muted px-4 py-3.5">
-        <Text className="font-jakarta text-[16px] leading-[22px] text-muted-foreground">
+      <View className="mt-1.5 flex-row items-center justify-between rounded-xl bg-muted px-3.5 py-3">
+        <Text className="font-jakarta text-[13.5px] leading-[18px] text-muted-foreground">
           Total paid
         </Text>
 
-        <Text className="font-jakarta-extrabold text-[20px] leading-[28px] text-foreground">
+        <Text className="font-jakarta-bold text-[17px] leading-[23px] text-foreground">
           {formatTotal(order.totalPaid)}
         </Text>
       </View>

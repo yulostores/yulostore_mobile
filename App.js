@@ -1,10 +1,12 @@
 import "./global.css";
 
 import { useCallback, useEffect } from "react";
+import { Platform } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
+import * as NavigationBar from "expo-navigation-bar";
 import * as SplashScreen from "expo-splash-screen";
 import {
   useFonts,
@@ -51,6 +53,19 @@ export default function App() {
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
+
+  // Android's own back/home/recents bar stays out of the way by default —
+  // hidden until a swipe in from the bottom edge asks for it, the same
+  // "immersive sticky" behaviour Swiggy/Blinkit/Zomato all use. `overlay-swipe`
+  // is what makes the reveal temporary: it auto-hides again once the swipe
+  // ends, rather than staying up until dismissed. iOS has no equivalent bar to
+  // hide, and Android auto-reapplies this on every foreground return, so it
+  // only needs setting once here rather than per-screen.
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    NavigationBar.setBehaviorAsync("overlay-swipe").catch(() => {});
+    NavigationBar.setVisibilityAsync("hidden").catch(() => {});
+  }, []);
 
   if (!ready) return null;
 

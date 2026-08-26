@@ -67,10 +67,12 @@ export default function OrderHistory({ navigation }) {
     });
   };
 
-  // No bottom edge — a tab screen now, and the tab bar below it already
-  // carries the bottom safe-area inset.
+  // Pushed from Profile's "Order history" row, same as Favourites and
+  // SavedAddresses — not a tab, so it carries its own bottom safe-area edge,
+  // and PageHeader below picks up the back arrow automatically because
+  // `navigation.canGoBack()` is true here.
   return (
-    <Screen edges={["top"]}>
+    <Screen edges={["top", "bottom"]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: SCROLL_PADDING }}
@@ -89,7 +91,7 @@ export default function OrderHistory({ navigation }) {
             Couldn't load your orders. Pull down to try again.
           </Text>
         ) : orders.length ? (
-          <View className="mt-6 gap-4 px-5">
+          <View className="mt-5 gap-3 px-5">
             {orders.map((order) => {
               const restaurantName =
                 restaurantNames[String(order.restaurantId)] ?? "Restaurant";

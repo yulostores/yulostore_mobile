@@ -71,19 +71,19 @@ export default function OnboardingStep1({ onNext }) {
 
       <View className="flex-1 items-center justify-center px-10">
         <Animated.Image
-          entering={ZoomIn.springify().damping(14)}
+          entering={ZoomIn.duration(450).easing(Easing.out(Easing.cubic))}
           source={storefront}
           style={{ width: illustrationWidth, height: illustrationWidth * ILLUSTRATION_ASPECT }}
           resizeMode="contain"
         />
 
-        <Animated.View entering={FadeInDown.delay(150).springify().damping(16)}>
+        <Animated.View entering={FadeInDown.delay(150).duration(400).easing(Easing.out(Easing.cubic))}>
           <Text className="mt-8 text-center font-jakarta-extrabold text-[26px] uppercase leading-[32px] tracking-tight text-[#0F172A]">
             Discover places{"\n"}near you
           </Text>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.delay(300).springify().damping(16)}>
+        <Animated.View entering={FadeInDown.delay(300).duration(400).easing(Easing.out(Easing.cubic))}>
           <Text className="mt-4 text-center font-jakarta text-[15px] leading-[22px] text-[#64748B]">
             We make it simple to find the food you crave. Enter your address and let us do the rest.
           </Text>

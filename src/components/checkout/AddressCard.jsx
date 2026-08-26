@@ -16,21 +16,21 @@ export default function AddressCard({ address, selected, accent, onPress, onDele
       onPress={onPress}
       style={selected ? { borderColor: accent.icon } : undefined}
       className={cn(
-        "w-full flex-row items-center gap-4 rounded-[20px] bg-card p-5",
-        selected ? "border-2" : "shadow-md shadow-black/10",
+        "w-full flex-row items-center gap-3 rounded-2xl bg-card p-4",
+        selected ? "border-2" : "shadow-sm shadow-black/10",
       )}
       accessibilityRole="radio"
       accessibilityState={{ selected }}
       accessibilityLabel={`${address.label}, ${address.line}`}
     >
-      <MapPin size={24} color={accent.icon} strokeWidth={2.2} />
+      <MapPin size={19} color={accent.icon} strokeWidth={2.2} />
 
       <View className="flex-1">
-        <Text className="font-jakarta-bold text-[19px] leading-[26px] text-foreground">
+        <Text className="font-jakarta-bold text-[15px] leading-[20px] text-foreground">
           {address.label}
         </Text>
 
-        <Text className="mt-1 font-jakarta text-[16px] leading-[23px] text-muted-foreground">
+        <Text numberOfLines={1} className="mt-0.5 font-jakarta text-[13px] leading-[18px] text-muted-foreground">
           {address.line}
         </Text>
       </View>
@@ -42,7 +42,7 @@ export default function AddressCard({ address, selected, accent, onPress, onDele
           accessibilityRole="button"
           accessibilityLabel="Delete address"
         >
-          <Trash2 size={20} color="#999999" />
+          <Trash2 size={17} color="#999999" />
         </Pressable>
       )}
     </Pressable>

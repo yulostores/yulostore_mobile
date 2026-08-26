@@ -10,7 +10,6 @@ import PhoneLogin from "@/screens/auth/PhoneLogin";
 import OtpVerification from "@/screens/auth/OtpVerification";
 import LocationSetup from "@/screens/location/LocationSetup";
 import CustomerTabs from "@/navigation/CustomerTabs";
-import ScanQr from "@/screens/scan/ScanQr";
 import SearchResults from "@/screens/search/SearchResults";
 import MenuRoute from "@/screens/menu/MenuRoute";
 import ItemDetail from "@/screens/menu/ItemDetail";
@@ -19,6 +18,7 @@ import OrderPlaced from "@/screens/orders/OrderPlaced";
 import FleetSearch from "@/screens/orders/FleetSearch";
 import OrderTracking from "@/screens/orders/OrderTracking";
 import FleetOrderTracking from "@/screens/orders/FleetOrderTracking";
+import OrderHistory from "@/screens/orders/OrderHistory";
 import OrderDetails from "@/screens/orders/OrderDetails";
 import Favourites from "@/screens/profile/Favourites";
 import SavedAddresses from "@/screens/profile/SavedAddresses";
@@ -94,15 +94,15 @@ export default function RootNavigator() {
         </Stack.Group>
       ) : (
         <Stack.Group>
-          {/* The one bottom nav in the app: Home, Search, Orders and Profile as
+          {/* The one bottom nav in the app: Home, Search, Scan and Profile as
               real tabs, always present. Everything below pushes on top of it and
               covers it full-screen — that's the entire rest of this list. */}
           <Stack.Screen name="Tabs" component={CustomerTabs} />
 
-          {/* The feed's bottom nav opens this over everything else — full-screen,
-              transparent status bar, and closed with its own X rather than the
-              header back arrow. */}
-          <Stack.Screen name="ScanQr" component={ScanQr} options={{ presentation: "fullScreenModal", animation: "slide_from_bottom" }} />
+          {/* Order history moved off the tab bar (see CustomerTabs) — it's reached
+              the same way as Favourites and SavedAddresses now: a row on Profile
+              that pushes onto the stack. */}
+          <Stack.Screen name="Orders" component={OrderHistory} />
 
           {/* Reachable after signing in as well as before it: the feed's address
               chip opens it to change where the order goes. */}

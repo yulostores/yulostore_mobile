@@ -28,19 +28,26 @@ import { PRESS_SCALE } from "@/lib/motion";
 export default function ScanQr({ navigation }) {
   const feature = useFeature("qrScanner");
 
+  // The Scan tab, not a modal — no bottom edge here, since the tab bar below
+  // it already carries the bottom safe-area inset (see CustomerTabBar). The
+  // close button only shows up when there's actually somewhere to go back
+  // to: reached as a tab there's nothing to close, since switching tabs
+  // *is* leaving it.
   return (
-    <Screen edges={["top", "bottom"]} statusBarStyle="light" fullBleed className="bg-black">
+    <Screen edges={["top"]} statusBarStyle="light" fullBleed className="bg-black">
       <View className="flex-1">
         {feature.enabled ? <CameraScanner /> : <ManualEntry feature={feature} />}
 
-        <PressableScale
-          onPress={() => navigation?.goBack()}
-          scale={PRESS_SCALE.tight}
-          accessibilityLabel="Close scanner"
-          className="absolute left-4 top-4 size-10 items-center justify-center rounded-full bg-black/50"
-        >
-          <X size={22} color="#FFFFFF" />
-        </PressableScale>
+        {navigation?.canGoBack?.() ? (
+          <PressableScale
+            onPress={() => navigation.goBack()}
+            scale={PRESS_SCALE.tight}
+            accessibilityLabel="Close scanner"
+            className="absolute left-4 top-4 size-10 items-center justify-center rounded-full bg-black/50"
+          >
+            <X size={22} color="#FFFFFF" />
+          </PressableScale>
+        ) : null}
       </View>
     </Screen>
   );

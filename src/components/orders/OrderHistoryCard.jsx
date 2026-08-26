@@ -11,52 +11,56 @@ import { formatTotal } from "@/data/orders";
 // something else, which is why it's a button rather than another tappable line.
 export default function OrderHistoryCard({ order, accent, onPress, onReorder }) {
   return (
-    <Card className="w-full p-5">
+    <Card className="w-full p-4">
       <Pressable
         onPress={onPress}
+        className="flex-row items-center gap-3"
         accessibilityRole="button"
         accessibilityLabel={`${order.restaurantName}, ${order.placedAt}, ${formatTotal(order.total)}`}
       >
-        <View className="flex-row items-start justify-between gap-3">
-          <Text
-            numberOfLines={1}
-            className="flex-1 font-jakarta-bold text-[19px] leading-[26px] text-foreground"
-          >
-            {order.restaurantName}
-          </Text>
+        <View className="flex-1">
+          <View className="flex-row items-center justify-between gap-3">
+            <Text
+              numberOfLines={1}
+              className="flex-1 font-jakarta-bold text-[16px] leading-[21px] text-foreground"
+            >
+              {order.restaurantName}
+            </Text>
 
-          <Text className="font-jakarta-bold text-[19px] leading-[26px] text-foreground">
-            {formatTotal(order.total)}
-          </Text>
-        </View>
-
-        <Text className="mt-1 font-jakarta text-[16px] leading-[23px] text-muted-foreground">
-          {order.placedAt}
-        </Text>
-
-        {/* Only claimed for orders that actually travelled in the separate bag —
-            the line is green whatever accent the app is wearing, the rule every
-            dietary mark in the app follows. */}
-        {order.vegFleet ? (
-          <View className="mt-2 flex-row items-center gap-1.5">
-            <Leaf size={15} color="#2E7D32" strokeWidth={2.2} />
-
-            <Text className="font-jakarta-medium text-[15px] leading-[21px] text-[#2E7D32]">
-              Delivered via veg-only fleet
+            <Text className="font-jakarta-bold text-[16px] leading-[21px] text-foreground">
+              {formatTotal(order.total)}
             </Text>
           </View>
-        ) : null}
+
+          {/* Date and the veg-fleet mark share one line — only claimed for orders
+              that actually travelled in the separate bag, and green whatever
+              accent the app is wearing, the rule every dietary mark follows. */}
+          <View className="mt-1 flex-row items-center gap-1.5">
+            <Text className="font-jakarta text-[13px] leading-[18px] text-muted-foreground">
+              {order.placedAt}
+            </Text>
+
+            {order.vegFleet ? (
+              <>
+                <View className="size-[3px] rounded-full bg-muted-foreground" />
+                <Leaf size={12} color="#2E7D32" strokeWidth={2.2} />
+                <Text className="font-jakarta-medium text-[12px] leading-[16px] text-[#2E7D32]">
+                  Veg-only fleet
+                </Text>
+              </>
+            ) : null}
+          </View>
+        </View>
       </Pressable>
 
       <Button
         onPress={onReorder}
         variant="secondary"
-        size="sm"
         style={{ borderColor: accent.icon }}
-        className="mt-3 self-start"
+        className="mt-3 h-9 self-start px-4"
         accessibilityLabel={`Reorder from ${order.restaurantName}`}
       >
-        <Text style={{ color: accent.icon }} className="font-jakarta-semibold text-[15px] leading-[21px]">
+        <Text style={{ color: accent.icon }} className="font-jakarta-semibold text-[13px] leading-[18px]">
           Reorder
         </Text>
       </Button>
