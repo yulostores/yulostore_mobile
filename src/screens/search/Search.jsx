@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useFeed } from "@/context/FeedContext";
 import { useRecentSearches, usePopularSearches, useTypeahead, useAddRecentSearch } from "@/hooks/useSearch";
 import useVoiceSearch from "@/hooks/useVoiceSearch";
+import useResponsive from "@/hooks/useResponsive";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
@@ -38,6 +40,8 @@ function Heading({ children, className }) {
 
 export default function Search({ navigation, route }) {
   const { cart, vegOnly } = useFeed();
+  const insets = useSafeAreaInsets();
+  const { size } = useResponsive();
 
   const [query, setQuery] = useState("");
   // Hides the summary bar without throwing the order away.
@@ -202,21 +206,23 @@ export default function Search({ navigation, route }) {
 
       {/* Hidden while suggestions are up — that's where the keyboard sits. */}
       {cart && !searching && !cartBarDismissed ? (
-        <StickyCartBar
-          className="absolute inset-x-9 bottom-6"
-          restaurantName={cart.restaurantName}
-          restaurantImage={cartRestaurant}
-          itemCount={cart.itemCount}
-          vegOnly={vegOnly}
-          onViewMenu={() =>
-            navigation?.navigate("Menu", {
-              restaurantId: cart.restaurantId,
-              restaurantName: cart.restaurantName,
-            })
-          }
-          onViewCart={() => navigation?.navigate("Cart")}
-          onDismiss={() => setCartBarDismissed(true)}
-        />
+        <View className="absolute inset-x-0" style={{ bottom: Math.max(insets.bottom, size(16)) + size(90) }}>
+          <StickyCartBar
+            style={{ marginHorizontal: size(16) }}
+            restaurantName={cart.restaurantName}
+            restaurantImage={cartRestaurant}
+            itemCount={cart.itemCount}
+            vegOnly={vegOnly}
+            onViewMenu={() =>
+              navigation?.navigate("Menu", {
+                restaurantId: cart.restaurantId,
+                restaurantName: cart.restaurantName,
+              })
+            }
+            onViewCart={() => navigation?.navigate("Cart")}
+            onDismiss={() => setCartBarDismissed(true)}
+          />
+        </View>
       ) : null}
     </Screen>
   );

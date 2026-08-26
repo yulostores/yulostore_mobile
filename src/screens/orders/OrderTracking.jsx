@@ -15,9 +15,9 @@ import { useOrderSocket, useOrderTracking } from "@/hooks/useOrders";
 // How far the ETA card is pulled up over the map. The map is scenery; the card
 // is what's being read, and the overlap is what stops the screen opening on a
 // full band of scenery before the arrival time.
-const CARD_OVERLAP = 28;
+const CARD_OVERLAP = 18;
 
-const SCROLL_PADDING = 32;
+const SCROLL_PADDING = 24;
 
 // Figma "24 · Live order tracking" and its veg-mode twin. The screen a customer
 // leaves open on the counter while they wait, so it's built to be read at a
@@ -136,14 +136,14 @@ export default function OrderTracking({ navigation, route }) {
             <DeliveryTimeline
               stage={order.stage}
               timeline={liveOrder.timeline}
-              className="mt-3"
+              className="mt-5"
             />
 
             {order.partner && (
-              <PartnerCard partner={order.partner} accent={accent} onCall={call} onChat={chat} className="mt-3" />
+              <PartnerCard partner={order.partner} accent={accent} onCall={call} onChat={chat} className="mt-5" />
             )}
 
-            <OrderSummaryCard order={order} accent={accent} vegOnly={vegOnly} className="mt-3" />
+            <OrderSummaryCard order={order} accent={accent} vegOnly={vegOnly} className="mt-5" />
           </View>
         )}
       </ScrollView>

@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 // whole reason the blur was there. With no blur to soften what's behind it, the
 // card layer goes nearly opaque instead. Legibility is the requirement; the
 // blur was only ever one way of meeting it.
-export default function BlurBackdrop({ intensity = 80, tint = "light", className }) {
+export default function BlurBackdrop({ intensity = 100, tint = "light", className }) {
   const blurEnabled = useFeatureEnabled("blurEffects");
   const BlurView = Blur?.BlurView;
 
@@ -25,7 +25,7 @@ export default function BlurBackdrop({ intensity = 80, tint = "light", className
       <View
         className={cn(
           "absolute inset-0",
-          blurEnabled && BlurView ? "bg-card/70" : "bg-card/95",
+          blurEnabled && BlurView ? "bg-card/90" : "bg-card/95",
           className,
         )}
       />

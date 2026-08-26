@@ -5,29 +5,21 @@ import Card from "@/components/ui/Card";
 import Text from "@/components/ui/Text";
 import { TIMELINE, stageIndex } from "@/data/orders";
 
-// Figma "Delivery timeline". Every stage of the order is listed, including the
-// ones still ahead of it — a list that only showed what had already happened
-// would leave the customer guessing how many steps are left.
-//
-// The ticks are green whatever accent the app is wearing: they mark what the
-// kitchen and the partner have done, not the brand, so they read the same on the
-// veg frame. Only the stage in progress takes the live blue, which is what makes
-// it findable in a column of otherwise identical rows.
 const DONE = { ring: "#E4F1E5", ink: "#2E7D32" };
 const LIVE = { ring: "#E3EDFB", ink: "#1A56C4" };
 const RAIL_DONE = "#2E7D32";
 const RAIL_AHEAD = "#E8E2D9";
 
-const DOT_SIZE = 22;
+const DOT_SIZE = 24;
 
 function StageDot({ state }) {
   if (state === "done") {
     return (
       <View
         style={{ width: DOT_SIZE, height: DOT_SIZE, backgroundColor: DONE.ring }}
-        className="items-center justify-center rounded-full"
+        className="items-center justify-center rounded-full shadow-sm"
       >
-        <Check size={13} color={DONE.ink} strokeWidth={3} />
+        <Check size={14} color={DONE.ink} strokeWidth={3} />
       </View>
     );
   }
@@ -36,9 +28,9 @@ function StageDot({ state }) {
     return (
       <View
         style={{ width: DOT_SIZE, height: DOT_SIZE, backgroundColor: LIVE.ring }}
-        className="items-center justify-center rounded-full"
+        className="items-center justify-center rounded-full shadow-sm"
       >
-        <View style={{ backgroundColor: LIVE.ink }} className="size-2 rounded-full" />
+        <View style={{ backgroundColor: LIVE.ink }} className="size-2.5 rounded-full" />
       </View>
     );
   }
@@ -51,10 +43,6 @@ function StageDot({ state }) {
   );
 }
 
-// Turns the tracking response's ISO timestamp into the "08:15 pm" the design
-// prints. Explicitly en-GB rather than the device locale: Hermes ships without
-// ICU data, so an arbitrary locale silently falls back and can produce a
-// 24-hour string where the design expects am/pm.
 function formatStageTime(timestamp) {
   if (!timestamp) return null;
 
@@ -69,11 +57,6 @@ function formatStageTime(timestamp) {
   return `${String(hour12).padStart(2, "0")}:${minutes} ${suffix}`;
 }
 
-// `timeline` is the API's per-stage list. Times used to be hardcoded into the
-// stage definitions, which printed the same "08:15 pm" under every order
-// regardless of when it was actually placed. Not every completed stage has a
-// real timestamp — this backend keeps no per-stage history — so a stage without
-// one simply shows no time rather than an invented one.
 export default function DeliveryTimeline({ stage, timeline = [], className }) {
   const current = stageIndex(stage);
 
@@ -82,12 +65,12 @@ export default function DeliveryTimeline({ stage, timeline = [], className }) {
   );
 
   return (
-    <Card className={className}>
-      <Text className="font-jakarta-bold text-[16px] leading-[22px] text-foreground">
-        Delivery timeline
+    <Card className={`p-5 shadow-lg shadow-black/10 rounded-3xl ${className || ""}`}>
+      <Text className="font-jakarta-bold text-[17px] leading-[22px] text-foreground tracking-tight">
+        Delivery Timeline
       </Text>
 
-      <View className="mt-3.5">
+      <View className="mt-5">
         {TIMELINE.map((step, index) => {
           const state = index < current ? "done" : index === current ? "live" : "ahead";
           const last = index === TIMELINE.length - 1;
@@ -97,41 +80,39 @@ export default function DeliveryTimeline({ stage, timeline = [], className }) {
               <View className="items-center">
                 <StageDot state={state} />
 
-                {/* The rail is only green as far as the order has actually got:
-                    the segment leaving the stage in progress is still ahead of
-                    it, so it stays grey. */}
                 {last ? null : (
                   <View
                     style={{ backgroundColor: index < current ? RAIL_DONE : RAIL_AHEAD }}
-                    className="w-[2px] flex-1 rounded-full"
+                    className="w-[2px] flex-1 rounded-full my-1 opacity-70"
                   />
                 )}
               </View>
 
-              <View className={last ? "flex-1 pl-3" : "flex-1 pb-4 pl-3"}>
+              <View className={last ? "flex-1 pl-4" : "flex-1 pb-5 pl-4"}>
                 <Text
                   className={
                     state === "ahead"
-                      ? "font-jakarta-semibold text-[14px] leading-[19px] text-muted-foreground"
-                      : "font-jakarta-semibold text-[14px] leading-[19px] text-foreground"
+                      ? "font-jakarta-semibold text-[15px] leading-[20px] text-muted-foreground/60"
+                      : state === "live"
+                      ? "font-jakarta-bold text-[15.5px] leading-[20px] text-foreground tracking-tight"
+                      : "font-jakarta-semibold text-[15px] leading-[20px] text-foreground"
                   }
                 >
                   {step.label}
                 </Text>
 
                 {timeByStage[step.id] ? (
-                  <Text className="font-jakarta text-[12px] leading-[16px] text-muted-foreground">
+                  <Text className="font-jakarta-medium text-[13px] leading-[18px] text-muted-foreground mt-0.5">
                     {timeByStage[step.id]}
                   </Text>
                 ) : null}
 
-                {/* Only the stage in progress carries a note, and only while it
-                    is in progress — "Tracking live" under a stage the order has
-                    already left would be a lie about the map above. */}
                 {state === "live" && step.note ? (
-                  <Text className="font-jakarta-medium text-[12px] leading-[16px] text-[#1A56C4]">
-                    {step.note}
-                  </Text>
+                  <View className="bg-blue-50/50 p-2.5 rounded-xl mt-2 border border-blue-100/50">
+                    <Text className="font-jakarta-semibold text-[13px] leading-[18px] text-blue-700">
+                      {step.note}
+                    </Text>
+                  </View>
                 ) : null}
               </View>
             </View>

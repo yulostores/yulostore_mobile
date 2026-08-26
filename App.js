@@ -54,17 +54,28 @@ export default function App() {
     if (ready) SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
 
-  // Android's own back/home/recents bar stays out of the way by default —
-  // hidden until a swipe in from the bottom edge asks for it, the same
-  // "immersive sticky" behaviour Swiggy/Blinkit/Zomato all use. `overlay-swipe`
-  // is what makes the reveal temporary: it auto-hides again once the swipe
-  // ends, rather than staying up until dismissed. iOS has no equivalent bar to
-  // hide, and Android auto-reapplies this on every foreground return, so it
-  // only needs setting once here rather than per-screen.
+  // `edgeToEdgeEnabled` (app.json) makes `setBehaviorAsync` a no-op, so
+  // "overlay-swipe" can no longer tell Android to auto-rehide its own
+  // back/home/recents bar once a swipe reveals it — `setVisibilityAsync`
+  // itself still works under edge-to-edge, though, so this reimplements the
+  // same effect by hand: hidden on launch, and hidden again 3s after any
+  // swipe brings it back up, instead of leaving it stuck open indefinitely.
   useEffect(() => {
     if (Platform.OS !== "android") return;
-    NavigationBar.setBehaviorAsync("overlay-swipe").catch(() => {});
     NavigationBar.setVisibilityAsync("hidden").catch(() => {});
+    let timer;
+    const subscription = NavigationBar.addVisibilityListener(({ visibility }) => {
+      clearTimeout(timer);
+      if (visibility === "visible") {
+        timer = setTimeout(() => {
+          NavigationBar.setVisibilityAsync("hidden").catch(() => {});
+        }, 3000);
+      }
+    });
+    return () => {
+      clearTimeout(timer);
+      subscription.remove();
+    };
   }, []);
 
   if (!ready) return null;

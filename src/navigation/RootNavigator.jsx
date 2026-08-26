@@ -18,7 +18,8 @@ import OrderPlaced from "@/screens/orders/OrderPlaced";
 import FleetSearch from "@/screens/orders/FleetSearch";
 import OrderTracking from "@/screens/orders/OrderTracking";
 import FleetOrderTracking from "@/screens/orders/FleetOrderTracking";
-import OrderHistory from "@/screens/orders/OrderHistory";
+import PaymentMethod from "@/screens/cart/PaymentMethod";
+
 import OrderDetails from "@/screens/orders/OrderDetails";
 import Favourites from "@/screens/profile/Favourites";
 import SavedAddresses from "@/screens/profile/SavedAddresses";
@@ -94,15 +95,10 @@ export default function RootNavigator() {
         </Stack.Group>
       ) : (
         <Stack.Group>
-          {/* The one bottom nav in the app: Home, Search, Scan and Profile as
+          {/* The one bottom nav in the app: Home, Search, Orders and Profile as
               real tabs, always present. Everything below pushes on top of it and
               covers it full-screen — that's the entire rest of this list. */}
           <Stack.Screen name="Tabs" component={CustomerTabs} />
-
-          {/* Order history moved off the tab bar (see CustomerTabs) — it's reached
-              the same way as Favourites and SavedAddresses now: a row on Profile
-              that pushes onto the stack. */}
-          <Stack.Screen name="Orders" component={OrderHistory} />
 
           {/* Reachable after signing in as well as before it: the feed's address
               chip opens it to change where the order goes. */}
@@ -128,6 +124,8 @@ export default function RootNavigator() {
               payment method and paying are all answered inline or in a sheet
               over the cart, so there's nothing left to push to. */}
           <Stack.Screen name="Cart" component={Cart} />
+          
+          <Stack.Screen name="PaymentMethod" component={PaymentMethod} />
 
           {/* Past the point of paying: Cart resets the stack to the feed plus
               this, rather than pushing, so going back from a confirmation can't land

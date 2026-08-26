@@ -3,16 +3,29 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import CustomerTabBar from "@/components/customer/CustomerTabBar";
 import Home from "@/screens/home/Home";
 import Search from "@/screens/search/Search";
-import ScanQr from "@/screens/scan/ScanQr";
+import OrderHistory from "@/screens/orders/OrderHistory";
 import Profile from "@/screens/profile/Profile";
 
 const Tab = createBottomTabNavigator();
 
 // The one bottom nav in the app: four destinations a customer can always get
-// back to the same way, from anywhere. Everything reached by drilling in —
-// a restaurant's menu, a dish, the cart, an order in flight, order history —
-// pushes on the stack above this and covers it, the same way it always has;
-// only the four screens that are genuinely "home base" live inside it.
+// back to the same way, from anywhere.
+//
+// Home       — the feed of restaurants and dishes.
+// Search     — text/voice search across the catalog.
+// Orders     — order history, reorder, track active deliveries.
+// Profile    — account, addresses, preferences, support.
+//
+// Scan was removed from the tab bar: QR scanning is a low-frequency action that
+// doesn't warrant a permanent slot. Every major food delivery app
+// (Swiggy, Zomato, Uber Eats, DoorDash) gives Order History a tab instead — it's
+// one of the highest-traffic destinations. Scan is still reachable from the Home
+// header or contextually where needed.
+//
+// Everything reached by drilling in — a restaurant's menu, a dish, the cart, an
+// order in flight — pushes on the stack above this and covers it, the same way
+// it always has; only the four screens that are genuinely "home base" live
+// inside it.
 export default function CustomerTabs() {
   return (
     <Tab.Navigator
@@ -21,7 +34,7 @@ export default function CustomerTabs() {
     >
       <Tab.Screen name="Home" component={Home} />
       <Tab.Screen name="Search" component={Search} />
-      <Tab.Screen name="Scan" component={ScanQr} options={{ tabBarLabel: "Scan" }} />
+      <Tab.Screen name="Orders" component={OrderHistory} options={{ tabBarLabel: "Orders" }} />
       <Tab.Screen name="Profile" component={Profile} />
     </Tab.Navigator>
   );

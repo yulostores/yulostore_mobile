@@ -7,7 +7,7 @@ import QuantityStepper from "@/components/menu/QuantityStepper";
 import { lineTotal } from "@/data/cart";
 import { formatPrice } from "@/data/menu";
 
-const THUMB = 56;
+const THUMB = 44;
 
 // One ordered dish on the checkout screen. This is the only place a quantity can
 // still be changed, so the stepper counts down to zero — that's how a dish is
@@ -16,7 +16,7 @@ export default function CheckoutItemRow({ line, accent, onChangeQuantity, onEdit
   const subtitle = line.notes.length ? line.notes.join(", ") : line.description;
 
   return (
-    <View className="flex-row items-center gap-3 py-3">
+    <View className="flex-row items-center gap-2.5 py-2">
       <View
         style={{ width: THUMB, height: THUMB }}
         className="items-center justify-center overflow-hidden rounded-xl bg-muted"
@@ -24,16 +24,16 @@ export default function CheckoutItemRow({ line, accent, onChangeQuantity, onEdit
         {line.image ? (
           <Image source={line.image} style={{ width: "100%", height: "100%" }} resizeMode="cover" resizeMethod="resize" />
         ) : (
-          <Utensils size={20} color="#999999" />
+          <Utensils size={18} color="#999999" />
         )}
       </View>
 
       <View className="flex-1">
-        <DietMark veg={line.veg} size={13} />
+        <DietMark veg={line.veg} size={11} />
 
         <Text
           numberOfLines={2}
-          className="mt-1 font-jakarta-semibold text-[15px] leading-[21px] text-foreground"
+          className="mt-0.5 font-jakarta-semibold text-[14px] leading-[19px] text-foreground"
         >
           {line.name}
         </Text>
@@ -41,7 +41,7 @@ export default function CheckoutItemRow({ line, accent, onChangeQuantity, onEdit
         {subtitle ? (
           <Text
             numberOfLines={1}
-            className="font-jakarta text-[12px] leading-[17px] text-muted-foreground"
+            className="font-jakarta text-[11px] leading-[15px] text-muted-foreground mt-0.5"
           >
             {subtitle}
           </Text>
@@ -59,16 +59,16 @@ export default function CheckoutItemRow({ line, accent, onChangeQuantity, onEdit
           >
             <Text
               style={{ color: accent.icon }}
-              className="font-jakarta-semibold text-[13px] leading-[18px]"
+              className="font-jakarta-semibold text-[12px] leading-[16px]"
             >
               Edit
             </Text>
-            <ChevronRight size={12} color={accent.icon} />
+            <ChevronRight size={11} color={accent.icon} />
           </Pressable>
         ) : null}
       </View>
 
-      <View className="items-end gap-2">
+      <View className="items-end gap-1.5">
         <QuantityStepper
           value={line.quantity}
           accent={accent}
@@ -78,7 +78,7 @@ export default function CheckoutItemRow({ line, accent, onChangeQuantity, onEdit
           onChange={onChangeQuantity}
         />
 
-        <Text className="font-jakarta-semibold text-[14px] leading-[20px] text-foreground">
+        <Text className="font-jakarta-semibold text-[13px] leading-[18px] text-foreground">
           {formatPrice(lineTotal(line))}
         </Text>
       </View>

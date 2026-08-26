@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Image, RefreshControl, ScrollView, View } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useFeature, useFeatureEnabled } from "@/context/FeatureFlagsContext";
@@ -56,7 +57,7 @@ function RestaurantRow({ data, ratingTone, onSelect }) {
         // `id: restaurantId`, so two recommended dishes from the same restaurant
         // collide on that key. `itemId` (the dish's own id) is unique per row;
         // `recommendedRestaurants` rows don't have one, so `id` covers those.
-        <Animated.View key={restaurant.itemId ?? restaurant.id} entering={enter(FadeIn, { index })}>
+        <Animated.View key={`${restaurant.itemId ?? restaurant.id}-${index}`} entering={enter(FadeIn, { index })}>
           <RestaurantCardSmall
             restaurant={restaurant}
             ratingTone={ratingTone}
@@ -69,7 +70,8 @@ function RestaurantRow({ data, ratingTone, onSelect }) {
 }
 
 export default function Home({ navigation }) {
-  const { gutter } = useResponsive();
+  const { gutter, size } = useResponsive();
+  const insets = useSafeAreaInsets();
   const { deliveryLocation, setDeliveryLocation } = useCustomerAuth();
   const locationFeature = useFeature("deviceLocation");
   const [locatingHeader, setLocatingHeader] = useState(false);
@@ -350,7 +352,7 @@ export default function Home({ navigation }) {
                     // actually reads down, so its cards rise in sequence. The
                     // stagger caps a few rows in — past that they arrive
                     // together rather than making a long list feel slow.
-                    <Animated.View key={restaurant.id} entering={enter(FadeInDown, { index })}>
+                    <Animated.View key={`${restaurant.id}-${index}`} entering={enter(FadeInDown, { index })}>
                       <RestaurantCardLarge
                         restaurant={restaurant}
                         favourite={favourite}
@@ -399,10 +401,10 @@ export default function Home({ navigation }) {
           flight wins the slot, since it's the thing already committed and
           time-sensitive; the cart bar reappears here the moment that order
           drops off `useActiveOrder`. */}
-      <View className="absolute inset-x-0 bottom-2">
+      <View className="absolute inset-x-0" style={{ bottom: Math.max(insets.bottom, size(16)) + size(90) }}>
         {activeOrder ? (
           <ActiveOrderBar
-            className="mx-[7px]"
+            style={{ marginHorizontal: size(16) }}
             restaurantName={activeOrderRestaurantName}
             status={activeOrder.status}
             accent={accentFor(vegOnly)}
@@ -410,7 +412,7 @@ export default function Home({ navigation }) {
           />
         ) : cart && !cartBarDismissed ? (
           <StickyCartBar
-            className="mx-6"
+            style={{ marginHorizontal: size(16) }}
             restaurantName={cart.restaurantName}
             restaurantImage={cartRestaurant}
             itemCount={cart.itemCount}

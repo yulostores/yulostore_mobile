@@ -42,17 +42,17 @@ const RIDDEN = `M${ORIGIN.x},${ORIGIN.y} V${ROADS_Y[1]} H${ROADS_X[1]} V${RIDER.
 const REMAINING = `M${RIDER.x},${RIDER.y} H${DESTINATION.x} V${DESTINATION.y}`;
 
 const COLORS = {
-  ground: "#FCF0EB",
-  block: "#E7DFD5",
+  ground: "#F5F7FA",
+  block: "#E4E9F2",
   road: "#FFFFFF",
-  ridden: "#3B6FD4",
-  remaining: "#D5D1CD",
-  rider: "#1B4079",
+  ridden: "#222222",
+  remaining: "#C5CEE0",
+  rider: "#222222",
 };
 
-const RIDER_SIZE = 52;
+const RIDER_SIZE = 56;
 const ORIGIN_SIZE = 24;
-const DESTINATION_SIZE = 26;
+const DESTINATION_SIZE = 28;
 
 // Centres a marker on its map coordinate.
 function markerStyle({ x, y }, size, scale) {

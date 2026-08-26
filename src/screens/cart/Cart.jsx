@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, View } from "react-native";
 import {
   Check,
@@ -24,7 +24,6 @@ import BillDetails from "@/components/cart/BillDetails";
 import CheckoutItemRow from "@/components/checkout/CheckoutItemRow";
 import NoteSheet from "@/components/checkout/NoteSheet";
 import OptionSheet from "@/components/checkout/OptionSheet";
-import PaymentMethodSheet from "@/components/checkout/PaymentMethodSheet";
 import VegFleetSheet from "@/components/checkout/VegFleetSheet";
 import PageHeader from "@/components/customer/PageHeader";
 import MenuItemCard from "@/components/menu/MenuItemCard";
@@ -52,18 +51,18 @@ function Chip({ label, Icon, active, accent, onPress }) {
       onPress={onPress}
       style={active ? { borderColor: accent.icon, backgroundColor: accent.tint } : undefined}
       className={cn(
-        "h-11 flex-row items-center gap-2 rounded-full border border-border bg-card px-4",
+        "h-9 flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3",
         active && "border",
       )}
       accessibilityRole="button"
       accessibilityState={{ selected: !!active }}
       accessibilityLabel={label}
     >
-      <Icon size={16} color={active ? accent.icon : "#666666"} />
+      <Icon size={14} color={active ? accent.icon : "#666666"} />
       <Text
         style={active ? { color: accent.icon } : undefined}
         className={cn(
-          "text-[14px] leading-[20px]",
+          "text-[13px] leading-[18px]",
           active ? "font-jakarta-semibold" : "font-jakarta-medium text-foreground",
         )}
       >
@@ -87,7 +86,7 @@ const TIP_CHOICES = [
 // and payment method open a sheet rather than a full-screen navigation; the
 // bill is the same `billFor` shape the server's checkout summary already
 // returns, so this screen can't quote a different total than the one it charges.
-export default function Cart({ navigation }) {
+export default function Cart({ route, navigation }) {
   const { cart, cartLoading, setLineQuantity, addToCart, vegOnly } = useFeed();
   const { addresses, selectedAddress, selectAddress, addAddress } = useCustomerAuth();
   const accent = accentFor(vegOnly);
@@ -95,6 +94,13 @@ export default function Cart({ navigation }) {
 
   const [tip, setTip] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState(DEFAULT_METHOD_ID);
+
+  useEffect(() => {
+    if (route.params?.paymentMethod) {
+      setPaymentMethod(route.params.paymentMethod);
+    }
+  }, [route.params?.paymentMethod]);
+
   const [deliveryNote, setDeliveryNote] = useState("");
   const [cookingNote, setCookingNote] = useState("");
   const [cutlery, setCutlery] = useState(false);
@@ -384,16 +390,16 @@ export default function Cart({ navigation }) {
 
         <Pressable
           onPress={() => setSheet("address")}
-          className="mx-6 mt-4 flex-row items-center gap-3 rounded-2xl bg-card p-4 shadow-md shadow-black/10"
+          className="mx-4 mt-3 flex-row items-center gap-2.5 rounded-2xl bg-card p-3.5 shadow-sm shadow-black/5"
           accessibilityRole="button"
           accessibilityLabel={
             deliveryAddress ? `Delivering to ${deliveryAddress.label}. Change address` : "Add a delivery address"
           }
         >
-          <MapPin size={20} color={accent.icon} strokeWidth={2.2} />
+          <MapPin size={18} color={accent.icon} strokeWidth={2.2} />
 
           <View className="flex-1">
-            <Text className="font-jakarta-bold text-[15px] leading-[21px] text-foreground">
+            <Text className="font-jakarta-bold text-[14px] leading-[20px] text-foreground">
               {deliveryAddress ? `Delivering to ${deliveryAddress.label}` : "Add a delivery address"}
             </Text>
 
@@ -410,20 +416,20 @@ export default function Cart({ navigation }) {
 
         <Pressable
           onPress={() => setSheet("delivery-note")}
-          className="mx-6 mt-3 self-start border-b border-dashed border-border-strong pb-0.5"
+          className="mx-4 mt-2.5 self-start border-b border-dashed border-border-strong pb-0.5"
           accessibilityRole="button"
           accessibilityLabel="Add instructions for delivery partner"
         >
-          <Text className="font-jakarta text-[13px] leading-[19px] text-muted-foreground">
+          <Text className="font-jakarta text-[12px] leading-[17px] text-muted-foreground">
             {deliveryNote || "Add instructions for delivery partner"}
           </Text>
         </Pressable>
 
-        <Text className="mt-4 px-6 font-jakarta text-[17px] leading-[24px] text-muted-foreground">
+        <Text className="mt-3 px-4 font-jakarta-bold text-[15px] leading-[21px] text-foreground">
           {cart.restaurantName}
         </Text>
 
-        <Card className="mx-6 mt-3 px-5 py-1">
+        <Card className="mx-4 mt-2.5 px-4 py-1 shadow-sm shadow-black/5">
           {cart.lines.map((line, index) => (
             <View key={line.key}>
               {index ? <View className="h-px bg-border" /> : null}
@@ -441,16 +447,16 @@ export default function Cart({ navigation }) {
         <Pressable
           onPress={openMenu}
           hitSlop={8}
-          className="self-start px-6 py-4"
+          className="self-start px-4 py-3"
           accessibilityRole="button"
           accessibilityLabel={`Add more items from ${cart.restaurantName}`}
         >
-          <Text style={{ color: accent.icon }} className="font-jakarta-bold text-[17px] leading-[24px]">
+          <Text style={{ color: accent.icon }} className="font-jakarta-bold text-[15px] leading-[21px]">
             + Add more items
           </Text>
         </Pressable>
 
-        <View className="flex-row flex-wrap gap-3 px-6">
+        <View className="flex-row flex-wrap gap-2.5 px-4">
           <Chip
             label="Cooking requests"
             Icon={NotepadText}
@@ -472,18 +478,18 @@ export default function Cart({ navigation }) {
             the option is offered where it means something rather than on every
             cart as a request the kitchen would contradict. */}
         {summary?.vegFleetEligible ? (
-          <Card className="mx-6 mt-4 p-4">
+          <Card className="mx-4 mt-4 p-3.5 shadow-sm shadow-black/5">
             <Pressable
               onPress={() => setVegFleet((current) => !current)}
-              className="flex-row items-center gap-3"
+              className="flex-row items-center gap-2.5"
               accessibilityRole="checkbox"
               accessibilityState={{ checked: vegFleet }}
               accessibilityLabel="Request the veg-only delivery fleet"
             >
-              <Leaf size={20} color="#2E7D32" strokeWidth={2.2} />
+              <Leaf size={18} color="#2E7D32" strokeWidth={2.2} />
 
               <View className="flex-1">
-                <Text className="font-jakarta-bold text-[15px] leading-[21px] text-foreground">
+                <Text className="font-jakarta-bold text-[14px] leading-[19px] text-foreground">
                   Request veg-only delivery fleet
                 </Text>
 
@@ -515,16 +521,16 @@ export default function Cart({ navigation }) {
         ) : null}
 
         {suggestions.length ? (
-          <View className="mt-7">
-            <Text className="px-6 font-jakarta-bold text-[15px] leading-[21px] tracking-[1px] text-muted-foreground">
+          <View className="mt-5">
+            <Text className="px-4 font-jakarta-bold text-[13px] leading-[18px] tracking-[1px] text-muted-foreground">
               COMPLETE YOUR MEAL
             </Text>
 
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 24, gap: 12 }}
-              className="mt-3 grow-0"
+              contentContainerStyle={{ paddingHorizontal: 16, gap: 10 }}
+              className="mt-2.5 grow-0"
             >
               {suggestions.map((item) => (
                 <View key={item.id} style={{ width: SUGGESTION_WIDTH }}>
@@ -540,7 +546,7 @@ export default function Cart({ navigation }) {
           accent={accent}
           title="Bill Details"
           totalLabel="To Pay"
-          className="mx-6 mt-6"
+          className="mx-4 mt-5"
           onAddTip={() => setSheet("tip")}
         />
 
@@ -599,17 +605,6 @@ export default function Cart({ navigation }) {
         onDismiss={() => setSheet(null)}
       />
 
-      <PaymentMethodSheet
-        visible={sheet === "payment"}
-        value={paymentMethod}
-        accent={accent}
-        onSelect={(id) => {
-          setPaymentMethod(id);
-          setSheet(null);
-        }}
-        onDismiss={() => setSheet(null)}
-      />
-
       <VegFleetSheet
         visible={sheet === "veg-fleet"}
         accent={accent}
@@ -635,7 +630,7 @@ export default function Cart({ navigation }) {
         </View>
 
         <Pressable
-          onPress={() => setSheet("payment")}
+          onPress={() => navigation.navigate("PaymentMethod", { value: paymentMethod, accent })}
           className="mt-1 flex-row items-center gap-2"
           accessibilityRole="button"
           accessibilityLabel={`Paying with ${method.label}. Change payment method`}
