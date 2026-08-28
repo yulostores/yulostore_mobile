@@ -1,12 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { KeyboardAvoidingView, Modal, Pressable, useWindowDimensions, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { cssInterop } from "nativewind";
@@ -54,8 +47,7 @@ export default function BottomSheet({
   /**
    * For sheets holding a text field. Without it the panel keeps its place at
    * the bottom of the window and the keyboard covers whatever is below the
-   * field — usually the button that saves it. Android resizes the window
-   * itself, so only iOS needs the padding.
+   * field — usually the button that saves it.
    */
   keyboardAvoiding = false,
   /**
@@ -138,9 +130,24 @@ export default function BottomSheet({
 
   if (!mounted) return null;
 
-  const Shell = keyboardAvoiding ? KeyboardAvoidingView : View;
-  const shellProps =
-    keyboardAvoiding && Platform.OS === "ios" ? { behavior: "padding" } : undefined;
+  // Always the same element type, whatever `keyboardAvoiding` is doing: a sheet
+  // that swaps its body (the address one turns into a form) would otherwise
+  // change the shell's type mid-life, and React tears down and remounts the
+  // whole subtree — the `Modal` included — when a component type changes.
+  // Without a `behavior`, KeyboardAvoidingView is a plain View.
+  //
+  // "padding" on Android too, for the same reason as PhoneLogin, only more so.
+  // The old iOS-only branch left Android leaning on the window resizing itself
+  // for the keyboard, and this window never does: it belongs to a
+  // `statusBarTranslucent` Modal, which lays out beyond the window limits, and
+  // the app is edge-to-edge besides. So the keypad came up over the panel and
+  // covered the field being typed into and the button that saves it — the
+  // address form being the worst of them, since its Save sits below a
+  // multiline input. "padding" degrades safely if a device does still resize:
+  // RN measures the keyboard against this view's own frame, so a frame that
+  // already ends above the keyboard yields ~0 padding rather than
+  // double-counting it.
+  const shellBehavior = keyboardAvoiding ? "padding" : undefined;
 
   return (
     <Modal
@@ -151,7 +158,7 @@ export default function BottomSheet({
       statusBarTranslucent
       onRequestClose={close}
     >
-      <Shell className="flex-1" {...shellProps}>
+      <KeyboardAvoidingView className="flex-1" behavior={shellBehavior}>
         <Animated.View style={backdropStyle} className={cn("absolute inset-0", scrimClassName)}>
           <Pressable
             className="flex-1"
@@ -185,7 +192,7 @@ export default function BottomSheet({
 
           {children}
         </Animated.View>
-      </Shell>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

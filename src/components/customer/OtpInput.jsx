@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Pressable, TextInput, View } from "react-native";
 
 import { cn } from "@/lib/utils";
@@ -23,7 +23,32 @@ export default function OtpInput({
   accessibilityLabel = "OTP code",
 }) {
   const inputRef = useRef(null);
+  const refocusTimer = useRef(null);
   const digits = value.split("");
+
+  // Tapping the boxes has to bring the keypad back, and a bare `focus()` does
+  // not: dismissing the keyboard (the iOS swipe-down, the Android back gesture)
+  // hides the keypad without telling JS, so RN still holds this field in
+  // `TextInputState.currentlyFocusedInput` — and `focusTextInput` returns early,
+  // without ever asking for the keyboard, when the field it is given is already
+  // that one. The customer was left on a screen whose only purpose is typing a
+  // code, with no way to type. Dropping focus first makes the second call real.
+  const focusInput = useCallback(() => {
+    const input = inputRef.current;
+    if (!input) return;
+
+    clearTimeout(refocusTimer.current);
+
+    if (!input.isFocused?.()) {
+      input.focus();
+      return;
+    }
+
+    input.blur();
+    // A frame's gap, not zero: blur and focus in the same tick collapse into no
+    // change at all on Android, and the keypad stays down.
+    refocusTimer.current = setTimeout(() => inputRef.current?.focus(), 50);
+  }, []);
 
   // The keypad is the only thing this screen is for, so it comes up on arrival
   // rather than waiting for a tap on the boxes.
@@ -33,9 +58,11 @@ export default function OtpInput({
     return () => clearTimeout(id);
   }, [autoFocus]);
 
+  useEffect(() => () => clearTimeout(refocusTimer.current), []);
+
   return (
     <Pressable
-      onPress={() => inputRef.current?.focus()}
+      onPress={focusInput}
       className={cn("w-full flex-row justify-center gap-2", className)}
     >
       <TextInput

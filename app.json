@@ -8,6 +8,13 @@
     "userInterfaceStyle": "light",
     "scheme": "yulostores",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/cfb8e587-7e59-4876-9659-d615f421d59e",
+      "fallbackToCacheTimeout": 0
+    },
     "ios": {
       "bundleIdentifier": "com.yulostores.customer",
       "buildNumber": "1",

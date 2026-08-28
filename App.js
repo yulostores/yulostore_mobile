@@ -23,6 +23,7 @@ import { FeatureFlagsProvider } from "@/context/FeatureFlagsContext";
 import { CustomerAuthProvider } from "@/context/CustomerAuthContext";
 import { FeedProvider } from "@/context/FeedContext";
 import RootNavigator from "@/navigation/RootNavigator";
+import { useOtaUpdates } from "@/hooks/useOtaUpdates";
 import { queryClient } from "@/api/queryClient";
 
 // Hold the native splash until the fonts are ready. Without this the app renders
@@ -33,6 +34,9 @@ SplashScreen.preventAutoHideAsync().catch(() => {
 });
 
 export default function App() {
+  // Pulls down and applies over-the-air JS/UI updates when the app is foregrounded.
+  useOtaUpdates();
+
   const [fontsLoaded, fontError] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
