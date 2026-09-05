@@ -55,6 +55,7 @@
     "plugins": [
       "expo-font",
       "expo-system-ui",
+      "expo-web-browser",
       [
         "expo-splash-screen",
         {

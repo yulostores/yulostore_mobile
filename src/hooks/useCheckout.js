@@ -57,10 +57,10 @@ export function usePlaceOrder() {
   });
 }
 
-// Stands in for the Razorpay Checkout SDK, which isn't bundled yet (see Payment.jsx):
-// asks the server to mark an "online" order paid without a real gateway round trip.
-// Only works while the server has no Razorpay key configured — once it does, this
-// call fails and the real verify flow above is what's needed instead.
+// Dev/local-only fallback for when the server has no Razorpay key configured (see
+// Cart.jsx and src/lib/razorpay.js for the real flow): asks the server to mark an
+// "online" order paid without a real gateway round trip. Once a key is configured,
+// this call fails server-side and the real verify flow above is what's used instead.
 export function useSimulatePayment() {
   const queryClient = useQueryClient();
 

@@ -34,7 +34,8 @@ import { formatPrice } from "@/data/menu";
 import { DEFAULT_METHOD_ID, apiMethodFor, findMethod } from "@/data/payment";
 import { accentFor } from "@/lib/accent";
 import { cn } from "@/lib/utils";
-import { useCheckoutSummary, usePlaceOrder, useSimulatePayment } from "@/hooks/useCheckout";
+import { useCheckoutSummary, usePlaceOrder, useSimulatePayment, useVerifyPayment } from "@/hooks/useCheckout";
+import { RazorpayCancelledError, openRazorpayCheckout } from "@/lib/razorpay";
 import { formatImageUrl } from "@/api/config";
 
 // Room under the pay bar, which is taller than a plain button — it carries the
@@ -116,6 +117,7 @@ export default function Cart({ route, navigation }) {
   const { data: summary, isLoading: isLoadingSummary } = useCheckoutSummary();
   const placeOrder = usePlaceOrder();
   const simulatePayment = useSimulatePayment();
+  const verifyPayment = useVerifyPayment();
 
   const suggestions = useMemo(() => {
     if (!summary?.upsellItems?.length) return [];
@@ -329,7 +331,7 @@ export default function Cart({ route, navigation }) {
     }
   };
 
-  const isPaying = placeOrder.isPending || simulatePayment.isPending;
+  const isPaying = placeOrder.isPending || simulatePayment.isPending || verifyPayment.isPending;
 
   const pay = () => {
     if (isPaying) return;
@@ -364,16 +366,44 @@ export default function Cart({ route, navigation }) {
             return;
           }
 
-          // No payment gateway SDK is bundled yet, so an "online" order is settled by
-          // simulating the Razorpay round trip server-side (see useSimulatePayment)
-          // rather than leaving the order sitting unpaid while the customer believes
-          // it's settled.
           const orderId = response?.orderId ?? response?.order?.orderId ?? response?.order?._id;
-          simulatePayment.mutate(orderId, {
-            onSuccess: () => onOrderPlaced(response),
-            onError: (error) =>
-              Alert.alert("Couldn't confirm payment", error.message ?? "Please try again."),
-          });
+
+          // response.razorpayOrder is only present once the server has a real gateway
+          // key configured (controllers/order.controller.js's createRazorpayOrderIfNeeded)
+          // — absent, there's nothing to hand off to, so this falls back to simulating
+          // the round trip server-side rather than leaving the order sitting unpaid.
+          if (!response?.razorpayOrder) {
+            simulatePayment.mutate(orderId, {
+              onSuccess: () => onOrderPlaced(response),
+              onError: (error) =>
+                Alert.alert("Couldn't confirm payment", error.message ?? "Please try again."),
+            });
+            return;
+          }
+
+          openRazorpayCheckout(response.razorpayOrder, { restaurantName: cart.restaurantName })
+            .then((signature) => {
+              verifyPayment.mutate(
+                { orderId, ...signature },
+                {
+                  onSuccess: () => onOrderPlaced(response),
+                  onError: () =>
+                    Alert.alert(
+                      "Couldn't confirm payment",
+                      "We couldn't confirm your payment just yet. Check your orders in a moment — it may still go through.",
+                      [{ text: "OK", onPress: () => navigation.navigate("Tabs", { screen: "Orders" }) }],
+                    ),
+                },
+              );
+            })
+            .catch((error) => {
+              const cancelled = error instanceof RazorpayCancelledError;
+              Alert.alert(
+                cancelled ? "Payment not completed" : "Payment failed",
+                "Your order is saved but not yet paid for. You can try paying again from your orders.",
+                [{ text: "OK", onPress: () => navigation.navigate("Tabs", { screen: "Orders" }) }],
+              );
+            });
         },
         onError: onOrderFailed,
       },
