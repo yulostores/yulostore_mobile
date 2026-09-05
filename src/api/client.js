@@ -133,18 +133,45 @@ client.interceptors.response.use(
 );
 
 // One error shape for every caller: `message` is safe to show, `code` is what
-// screens branch on (CART_RESTAURANT_CONFLICT, CART_PRICE_CHANGED, …).
+// screens branch on (CART_RESTAURANT_CONFLICT, CART_PRICE_CHANGED, …) and what
+// lib/apiErrors.js turns into customer-facing wording.
+//
+// Three failures used to arrive here indistinguishable from one another and all came out
+// as "Check your connection": a genuinely offline device, a request that hit the 20s
+// timeout, and a gateway that gave up on a slow upstream (a 502/504 with an HTML body).
+// The first is the customer's to fix; the other two are ours, and telling them to check
+// their Wi-Fi sent them looking in the wrong place.
 function normalise(err) {
   if (err instanceof Error && err.code && !err.isAxiosError) return err;
 
-  const isNetwork = !err.response;
-  const message = isNetwork
-    ? "Can't reach the server. Check your connection and try again."
-    : (err.response?.data?.message ?? err.message ?? "Something went wrong.");
+  const status = err.response?.status;
+  const serverCode = err.response?.data?.code;
+  const serverMessage = err.response?.data?.message;
+
+  // axios reports its own timeout as ECONNABORTED/ETIMEDOUT with no response attached.
+  const isTimeout =
+    err.code === "ECONNABORTED" || err.code === "ETIMEDOUT" || /timeout/i.test(err.message ?? "");
+  const isNetwork = !err.response && !isTimeout;
+
+  // A 502/503/504 from a proxy carries an HTML body, so there is no envelope to read a
+  // code out of — synthesise one rather than leaving screens with `undefined`.
+  const isGateway = status === 502 || status === 503 || status === 504;
+
+  let code = serverCode;
+  if (!code) {
+    if (isTimeout) code = "TIMEOUT";
+    else if (isNetwork) code = "NETWORK_ERROR";
+    else if (isGateway || status >= 500) code = "SERVER_ERROR";
+  }
+
+  const message =
+    isTimeout || isNetwork || !serverMessage
+      ? (err.message ?? "Something went wrong.")
+      : serverMessage;
 
   const apiError = new Error(message);
-  apiError.code = err.response?.data?.code ?? (isNetwork ? "NETWORK_ERROR" : undefined);
-  apiError.status = err.response?.status;
+  apiError.code = code;
+  apiError.status = status;
   apiError.details = err.response?.data?.details;
   return apiError;
 }

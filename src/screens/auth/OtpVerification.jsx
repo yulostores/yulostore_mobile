@@ -7,14 +7,19 @@ import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import BackButton from "@/components/customer/BackButton";
 import OtpInput from "@/components/customer/OtpInput";
+import { describeError } from "@/lib/apiErrors";
 
 // The server issues and validates a six-digit code (`z.string().length(6)`), so
 // a four-box input could never produce one it would accept.
 const OTP_LENGTH = 6;
 const RESEND_SECONDS = 30;
 
+// Offered as a tap-to-fill when the server is in bypass mode (SMS_PROVIDER=bypass): any
+// six digits are accepted there, so this just saves typing.
+const BYPASS_PLACEHOLDER_CODE = "123456";
+
 export default function OtpVerification({ onNext }) {
-  const { pendingPhone, devOtp, requestOtp, verifyOtp, loading } = useCustomerAuth();
+  const { pendingPhone, devOtp, otpBypass, requestOtp, verifyOtp, loading } = useCustomerAuth();
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(RESEND_SECONDS);
@@ -48,8 +53,12 @@ export default function OtpVerification({ onNext }) {
     try {
       await verifyOtp(code);
       onNext();
-    } catch (e) {
-      setError(e.message || "Incorrect code. Try again.");
+    } catch (verifyError) {
+      // An expired code, a locked-out number, an unreachable server and a mistyped digit
+      // all used to read as one flat "incorrect code", which sent the customer retyping
+      // when what they needed was a new code — or their connection back. See
+      // lib/apiErrors.js.
+      setError(describeError(verifyError, "Incorrect code. Please try again."));
       setOtp("");
     }
   };
@@ -73,11 +82,7 @@ export default function OtpVerification({ onNext }) {
       setSecondsLeft(RESEND_SECONDS);
       setResendKey((current) => current + 1);
     } catch (resendError) {
-      setError(
-        resendError.code === "RATE_LIMITED"
-          ? "Too many attempts. Please wait a few minutes and try again."
-          : (resendError.message ?? "Couldn't resend the code. Please try again."),
-      );
+      setError(describeError(resendError, "Couldn't resend the code. Please try again."));
     }
   };
 
@@ -102,7 +107,11 @@ export default function OtpVerification({ onNext }) {
           </Text>
 
           <Text className="mt-3 font-jakarta text-[14px] leading-[20px] text-muted-foreground">
-            Sent via SMS to +91 {pendingPhone}
+            {/* Claiming an SMS was sent when the server is in bypass mode is the thing
+                that makes the customer sit and wait for one. */}
+            {otpBypass
+              ? `Verifying +91 ${pendingPhone}`
+              : `Sent via SMS to +91 ${pendingPhone}`}
           </Text>
 
           <OtpInput length={OTP_LENGTH} value={otp} onChange={handleChange} className="mt-10" />
@@ -125,6 +134,41 @@ export default function OtpVerification({ onNext }) {
                 : "Resend code"}
             </Text>
           </Pressable>
+
+          {/* Waiting on an SMS that hasn't arrived is the one failure the app never
+              said anything about — there is no error to show, so the screen just sat
+              there. Once the resend timer is up, say what to check. */}
+          {secondsLeft === 0 && !error && !otpBypass ? (
+            <Text className="mt-3 px-2 text-center font-jakarta text-[12px] leading-[17px] text-muted-foreground">
+              Didn't get it? Check that +91 {pendingPhone} is correct and your phone has
+              signal, then resend. SMS can take up to a minute.
+            </Text>
+          ) : null}
+
+          {/* SMS_PROVIDER=bypass on the server — no message is being sent at all, so
+              saying "check your signal" would be a lie and the resend timer is pointless.
+              Tell the customer plainly instead of leaving them waiting. */}
+          {otpBypass ? (
+            <Pressable
+              onPress={() => handleChange(BYPASS_PLACEHOLDER_CODE)}
+              className="mt-5 items-center rounded-2xl border border-dashed border-border-strong bg-muted px-4 py-3"
+              accessibilityRole="button"
+              accessibilityLabel={`Continue with code ${BYPASS_PLACEHOLDER_CODE.split("").join(" ")}`}
+            >
+              <Text className="text-center font-jakarta text-[12px] leading-[17px] text-muted-foreground">
+                SMS delivery is temporarily paused — no code will arrive. Enter any 6 digits
+                to continue.
+              </Text>
+
+              <Text className="mt-1 font-jakarta-extrabold text-[22px] leading-[28px] tracking-[6px] text-foreground">
+                {BYPASS_PLACEHOLDER_CODE}
+              </Text>
+
+              <Text className="mt-0.5 font-jakarta text-[11px] leading-[16px] text-muted-foreground">
+                Tap to fill
+              </Text>
+            </Pressable>
+          ) : null}
 
           {/* The only route a code has to the customer right now: no SMS provider
               is wired up anywhere, so the server echoes the OTP back in the send

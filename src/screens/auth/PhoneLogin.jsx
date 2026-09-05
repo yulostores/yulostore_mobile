@@ -7,6 +7,7 @@ import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import BackButton from "@/components/customer/BackButton";
+import { describeError } from "@/lib/apiErrors";
 
 const COUNTRY_CODE = "+91";
 const PHONE_LENGTH = 10;
@@ -29,11 +30,10 @@ export default function PhoneLogin({ onNext }) {
       await requestOtp(phone);
       onNext();
     } catch (requestError) {
-      setError(
-        requestError.code === "RATE_LIMITED"
-          ? "Too many attempts. Please wait a few minutes and try again."
-          : (requestError.message ?? "Couldn't send the code. Please try again."),
-      );
+      // Every failure mode gets its own wording — rate limit, SMS provider down, gateway
+      // timeout, no connection — instead of one message that fits none of them. See
+      // lib/apiErrors.js.
+      setError(describeError(requestError, "Couldn't send the code. Please try again."));
     }
   };
 

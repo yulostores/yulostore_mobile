@@ -43,6 +43,10 @@ export function CustomerAuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [devOtp, setDevOtp] = useState(null);
+  // The server sets this when SMS_PROVIDER=bypass — no SMS is being sent at all. Surfaced
+  // on the OTP screen so the customer isn't left waiting out the resend timer for a
+  // message that will never arrive.
+  const [otpBypass, setOtpBypass] = useState(false);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
   const [deliveryLocation, setDeliveryLocationState] = useState(null);
   // The access token is memory-only, so a cold start always begins without one even
@@ -57,6 +61,7 @@ export function CustomerAuthProvider({ children }) {
     setUser(null);
     setPendingPhone(null);
     setDevOtp(null);
+    setOtpBypass(false);
     AsyncStorage.removeItem(PROFILE_KEY).catch(() => {});
     queryClient.clear();
   }, [queryClient]);
@@ -260,6 +265,7 @@ export function CustomerAuthProvider({ children }) {
       const response = await client.post("/auth/customer/otp/send", { phone: digits });
       // Non-production builds echo the code back — there's no SMS provider wired in.
       setDevOtp(response?.devOtp ?? null);
+      setOtpBypass(!!response?.otpBypass);
       return digits;
     } finally {
       setLoading(false);
@@ -278,6 +284,7 @@ export function CustomerAuthProvider({ children }) {
         setAccessToken(accessToken);
         setUser(authedUser);
         setDevOtp(null);
+        setOtpBypass(false);
         setSessionReady(true);
         return { user: authedUser, isNewUser };
       } finally {
@@ -320,6 +327,7 @@ export function CustomerAuthProvider({ children }) {
       sessionReady,
       pendingPhone,
       devOtp,
+      otpBypass,
       hasSeenOnboarding,
       deliveryLocation,
       addresses,
@@ -341,6 +349,7 @@ export function CustomerAuthProvider({ children }) {
       sessionReady,
       pendingPhone,
       devOtp,
+      otpBypass,
       hasSeenOnboarding,
       deliveryLocation,
       addresses,
