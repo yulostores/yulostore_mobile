@@ -19,10 +19,25 @@ export function useCart() {
     enabled: isAuthenticated && sessionReady,
   });
 
-  const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["cart"] });
-    // The checkout summary carries its own copy of the cart and bill.
-    queryClient.invalidateQueries({ queryKey: ["checkoutSummary"] });
+  const invalidate = (response) => {
+    // If the server echoes the new cart back, we can avoid the GET /cart
+    // round-trip entirely by painting it straight into the cache.
+    if (response?.cart && response?.bill) {
+      queryClient.setQueryData(["cart"], response);
+      
+      // Update the checkout summary inline too if it's already cached, so
+      // a customer on the checkout screen sees the bill update instantly
+      // without us firing a background refetch on every tap.
+      queryClient.setQueryData(["checkoutSummary"], (old) => {
+        if (!old) return old;
+        return { ...old, cart: response.cart, bill: response.bill };
+      });
+    } else {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      // Mark summary stale so it refetches next time it mounts, but don't
+      // force a round-trip now while the customer is just tapping +/- on the menu.
+      queryClient.invalidateQueries({ queryKey: ["checkoutSummary"], refetchType: "none" });
+    }
   };
 
   const addItem = useMutation({
@@ -35,6 +50,52 @@ export function useCart() {
       qty <= 0
         ? client.delete(`/cart/items/${lineItemId}`)
         : client.patch(`/cart/items/${lineItemId}`, { qty }),
+    onMutate: async ({ lineItemId, qty }) => {
+      // Cancel any outgoing GET /cart so it doesn't overwrite our optimistic state
+      await queryClient.cancelQueries({ queryKey: ["cart"] });
+      
+      const previous = queryClient.getQueryData(["cart"]);
+      
+      // Optimistically apply the new quantity to the cache so the UI updates 
+      // immediately on tap, rather than feeling like a slow network.
+      if (previous?.cart?.items) {
+        queryClient.setQueryData(["cart"], (old) => {
+          if (!old?.cart) return old;
+          
+          const newItems = [...old.cart.items];
+          const index = newItems.findIndex((i) => i._id === lineItemId);
+          if (index === -1) return old;
+          
+          const item = newItems[index];
+          const qtyDiff = qty - item.qty;
+          const priceDiff = qtyDiff * item.unitPrice;
+          
+          if (qty <= 0) {
+            newItems.splice(index, 1);
+          } else {
+            newItems[index] = { ...item, qty };
+          }
+          
+          return {
+            ...old,
+            cart: { ...old.cart, items: newItems },
+            bill: old.bill ? {
+              ...old.bill,
+              itemTotal: Math.max(0, old.bill.itemTotal + priceDiff),
+              grandTotal: Math.max(0, old.bill.grandTotal + priceDiff),
+            } : old.bill,
+          };
+        });
+      }
+      
+      return { previous };
+    },
+    onError: (err, variables, context) => {
+      // Roll back to the true state if the request drops
+      if (context?.previous) {
+        queryClient.setQueryData(["cart"], context.previous);
+      }
+    },
     onSuccess: invalidate,
   });
 

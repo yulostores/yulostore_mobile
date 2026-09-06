@@ -8,6 +8,7 @@ import OnboardingStep2 from "@/screens/onboarding/OnboardingStep2";
 import OnboardingStep3 from "@/screens/onboarding/OnboardingStep3";
 import PhoneLogin from "@/screens/auth/PhoneLogin";
 import OtpVerification from "@/screens/auth/OtpVerification";
+import ProfileSetup from "@/screens/auth/ProfileSetup";
 import LocationSetup from "@/screens/location/LocationSetup";
 import CustomerTabs from "@/navigation/CustomerTabs";
 import SearchResults from "@/screens/search/SearchResults";
@@ -21,6 +22,7 @@ import FleetOrderTracking from "@/screens/orders/FleetOrderTracking";
 import PaymentMethod from "@/screens/cart/PaymentMethod";
 
 import OrderDetails from "@/screens/orders/OrderDetails";
+import EditProfile from "@/screens/profile/EditProfile";
 import Favourites from "@/screens/profile/Favourites";
 import SavedAddresses from "@/screens/profile/SavedAddresses";
 import NotificationPreferences from "@/screens/profile/NotificationPreferences";
@@ -39,6 +41,7 @@ export default function RootNavigator() {
     sessionReady,
     deliveryLocation,
     addresses,
+    user,
   } = useCustomerAuth();
 
   // Two separate stacks rather than one flat list. Before, every screen was
@@ -49,22 +52,42 @@ export default function RootNavigator() {
   // merely discouraged, and unmounts the previous customer's screens outright.
   const signedIn = isAuthenticated && hydrated && sessionReady;
 
+  // A phone+OTP account starts with a verified number and nothing else — the server
+  // creates it with an empty name and expects the profile to be completed afterwards
+  // (controllers/auth.controller.js's verifyCustomerOtp). Nothing ever completed it, so
+  // every order reached its restaurant with no customer on it. Asked here, before the
+  // customer can reach a menu, for the same reason location is: an order can't be placed
+  // usefully without it, so it belongs in the path to the feed rather than in a settings
+  // screen nobody opens.
+  //
+  // Ordered before the location check below — a name is one field and one tap, and asking
+  // for it after the address would interrupt a customer who is already mid-setup.
+  const needsProfile = signedIn && !user?.name?.trim();
+
   // A customer who has just verified their number has nowhere to deliver to yet,
   // so the signed-in stack opens on location setup instead of a feed of
   // restaurants picked by a fallback coordinate they never chose. Everyone else
   // lands on the feed.
   const needsLocation = signedIn && !deliveryLocation && addresses.length === 0;
 
+  const initialSignedInRoute = needsProfile ? "ProfileSetup" : needsLocation ? "Location" : "Tabs";
+
   return (
     <Stack.Navigator
       screenOptions={{ headerShown: false }}
-      initialRouteName={signedIn ? (needsLocation ? "Location" : "Tabs") : "Splash"}
+      initialRouteName={signedIn ? initialSignedInRoute : "Splash"}
     >
       {!signedIn ? (
         <Stack.Group>
           <Stack.Screen name="Splash" component={Splash} />
 
-          <Stack.Screen name="Onboarding1">
+          {/* Fade rather than the default lateral slide, on both of the two
+              screens the splash can hand over to. A slide implies the customer
+              moved somewhere; leaving the splash is the app finishing its
+              launch, and a dissolve reads that way. It also keeps out of the
+              way of Onboarding1's own entrance choreography, which would
+              otherwise be playing while the whole screen slid underneath it. */}
+          <Stack.Screen name="Onboarding1" options={{ animation: "fade" }}>
             {({ navigation }) => <OnboardingStep1 onNext={() => navigation.navigate("Onboarding2")} />}
           </Stack.Screen>
 
@@ -83,7 +106,7 @@ export default function RootNavigator() {
             )}
           </Stack.Screen>
 
-          <Stack.Screen name="Login">
+          <Stack.Screen name="Login" options={{ animation: "fade" }}>
             {({ navigation }) => <PhoneLogin onNext={() => navigation.navigate("Otp")} />}
           </Stack.Screen>
 
@@ -99,6 +122,23 @@ export default function RootNavigator() {
               real tabs, always present. Everything below pushes on top of it and
               covers it full-screen — that's the entire rest of this list. */}
           <Stack.Screen name="Tabs" component={CustomerTabs} />
+
+          {/* The name the restaurant and the delivery partner see on the order. Only ever
+              the opening route (never pushed onto): saving it clears `needsProfile`, and
+              this resets onward to whichever step is still outstanding rather than
+              stranding a brand-new customer on the feed with no delivery address. */}
+          <Stack.Screen name="ProfileSetup">
+            {({ navigation }) => (
+              <ProfileSetup
+                onNext={() =>
+                  navigation.reset({
+                    index: 0,
+                    routes: [{ name: needsLocation ? "Location" : "Tabs" }],
+                  })
+                }
+              />
+            )}
+          </Stack.Screen>
 
           {/* Reachable after signing in as well as before it: the feed's address
               chip opens it to change where the order goes. */}
@@ -153,6 +193,10 @@ export default function RootNavigator() {
               screen here is one of its rows, which is why they're all reachable by
               name rather than nested — the feed's avatar and the tracking screens
               link straight in. */}
+          {/* The account's own details. ProfileSetup asks for the name once, before the
+              feed; this is where a typo in it gets fixed afterwards. */}
+          <Stack.Screen name="EditProfile" component={EditProfile} />
+
           <Stack.Screen name="Favourites" component={Favourites} />
 
           <Stack.Screen name="SavedAddresses" component={SavedAddresses} />

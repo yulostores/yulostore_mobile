@@ -7,7 +7,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "scheme": "yulostores",
-    "newArchEnabled": true,
     "runtimeVersion": {
       "policy": "appVersion"
     },
@@ -29,7 +28,6 @@
     "android": {
       "package": "com.yulostores.customer",
       "versionCode": 1,
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": true,
       "permissions": [
         "ACCESS_COARSE_LOCATION",

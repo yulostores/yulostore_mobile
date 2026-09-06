@@ -10,15 +10,21 @@ import Animated, {
 import { DURATION, PRESS_SCALE, SPRING } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 /**
  * A pressable that acknowledges the touch by shrinking very slightly.
  *
- * Every interactive surface in the app should use this rather than a bare
- * `Pressable`: the feedback is what tells a customer the tap registered, on a
- * screen where the response to it may be a network round trip away.
+ * Use for hero controls and larger surfaces where the spring-driven scale
+ * feedback actually reads — tab bar icons, the search field, full-width action
+ * bars. For list rows, cards, steppers and other high-frequency touchables
+ * where 30+ instances mount at once, prefer `PressableDim` instead.
  *
  * Honours the OS "reduce motion" setting, where the scale is dropped and only
  * the opacity dip remains — still an acknowledgement, without the movement.
+ *
+ * A single `AnimatedPressable` node carries both `className` (NativeWind 4.2's
+ * `cssInterop` handles Reanimated components correctly) and the animated style.
  */
 export default function PressableScale({
   children,
@@ -58,30 +64,46 @@ export default function PressableScale({
   };
 
   return (
-    // Two nodes, not one: on native, NativeWind's class styling and Reanimated's
-    // UI-thread animated style can't reliably share a single node — the
-    // class-driven (and even literal inline-style) colors/shape silently fail to
-    // paint. HomeBottomNav's NavTab hit the same thing and routed around it
-    // locally (see its comments); this fixes it at the source instead. The outer
-    // Animated.View carries only the animated opacity/scale, so the whole pill
-    // still dims and shrinks together; the inner plain Pressable carries
-    // className/style/touch exactly the way every non-animated NativeWind
-    // component in this app already does — the one combination proven to render
-    // correctly on-device (see SettingsRow, which is className-only and renders
-    // fine). `style` goes on both: the outer needs any layout sizing a caller
-    // passes (e.g. NavTab's `flex: 1`, to stretch inside its own parent), and
-    // duplicating it onto the inner is harmless.
-    <Animated.View style={[style, animatedStyle]}>
-      <Pressable
-        disabled={disabled}
-        onPressIn={disabled ? undefined : handlePressIn}
-        onPressOut={disabled ? undefined : handlePressOut}
-        className={cn(className)}
-        style={style}
-        {...props}
-      >
-        {children}
-      </Pressable>
-    </Animated.View>
+    <AnimatedPressable
+      disabled={disabled}
+      onPressIn={disabled ? undefined : handlePressIn}
+      onPressOut={disabled ? undefined : handlePressOut}
+      className={cn(className)}
+      style={[style, animatedStyle]}
+      {...props}
+    >
+      {children}
+    </AnimatedPressable>
+  );
+}
+
+/**
+ * A zero-allocation pressable that dims on touch — no shared values, no
+ * animated styles, no Reanimated subscription. The feedback is a static
+ * opacity dip driven by `Pressable`'s own `pressed` state, which is enough
+ * to confirm the tap on a small target where a 4% spring scale is invisible
+ * under a thumb anyway.
+ *
+ * Use for high-frequency touchables in lists: restaurant cards, favourite
+ * hearts, quantity steppers — anywhere 20+ instances mount at once and the
+ * per-instance cost of `PressableScale` adds up.
+ */
+export function PressableDim({
+  children,
+  className,
+  style,
+  dimTo = 0.9,
+  disabled,
+  ...props
+}) {
+  return (
+    <Pressable
+      disabled={disabled}
+      className={cn(className)}
+      style={({ pressed }) => [style, pressed && !disabled ? { opacity: dimTo } : undefined]}
+      {...props}
+    >
+      {children}
+    </Pressable>
   );
 }

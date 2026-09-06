@@ -1,32 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 
-import client from "@/api/client";
+import { homeFeedQuery } from "@/api/homeFeed";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useFeed } from "@/context/FeedContext";
-import { coordsFrom } from "@/hooks/useSearch";
+import { coordsFrom } from "@/lib/coords";
 
-const DEFAULT_RADIUS_KM = 10;
-
-// One call backs the whole Home screen. Auth is optional — a signed-out browse
-// still returns the feed, just without `isFavorited` on each card.
+// One call backs the whole Home screen. By the time this mounts the launch
+// bootstrap has usually already put the answer in the cache under this exact key,
+// so the first render of the feed is synchronous and no request goes out.
 export function useHomeFeed() {
   const { deliveryLocation } = useCustomerAuth();
   const { vegOnly, vegScope } = useFeed();
   const { lat, lng } = coordsFrom(deliveryLocation);
 
-  return useQuery({
-    queryKey: ["homeFeed", lat, lng, vegOnly, vegScope],
-    queryFn: () =>
-      client.get("/home/feed", {
-        params: {
-          lat,
-          lng,
-          radius: DEFAULT_RADIUS_KM,
-          // The endpoint doesn't read stored preferences — veg mode is passed
-          // explicitly on every call (Gotcha #2).
-          vegMode: vegOnly,
-          vegScope,
-        },
-      }),
-  });
+  return useQuery(homeFeedQuery({ lat, lng, vegOnly, vegScope }));
 }

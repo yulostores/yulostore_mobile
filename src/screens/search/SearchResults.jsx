@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { memo, useCallback, useMemo, useState } from "react";
+import { ActivityIndicator, FlatList, View } from "react-native";
 
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useFeed } from "@/context/FeedContext";
@@ -13,9 +13,45 @@ import { VEG_SCOPES } from "@/components/home/VegModePopover";
 import SearchFilterChips from "@/components/search/SearchFilterChips";
 import SearchTopBar from "@/components/search/SearchTopBar";
 import { useSearchResults } from "@/hooks/useSearch";
+import { LIST_PERF } from "@/lib/list";
 import { toRestaurantCard } from "@/lib/restaurant";
 
 const cartRestaurant = require("@/assets/home/cart-restaurant-avatar.png");
+
+// One identity to hand the list while a search is in flight or has failed, so
+// those renders don't churn it with a fresh empty array.
+const NO_ROWS = [];
+
+const resultKey = (item) => String(item.id);
+
+// A broad term can match every storefront in the city, so the results list is
+// virtualized: each card carries a full-width remote photo, and mounting the
+// whole set the way a `.map()` in a ScrollView does costs first paint and holds
+// every photo in memory for as long as the screen is open.
+//
+// Memoized on values and stable callbacks, so toggling one heart re-renders one
+// card rather than every result currently mounted.
+const ResultCard = memo(function ResultCard({ restaurant, favourite, onPress, onToggleFavourite }) {
+  return (
+    // The gutter sits on the row rather than on the list's content container,
+    // so the filter rail in the header still scrolls edge to edge.
+    <View className="px-6">
+      <RestaurantCardLarge
+        restaurant={restaurant}
+        favourite={favourite}
+        ratingTone="soft"
+        onToggleFavourite={() => onToggleFavourite(restaurant)}
+        onPress={() => onPress(restaurant)}
+      />
+    </View>
+  );
+});
+
+// gap-4, as a separator rather than a gap on the container so the filter rail
+// above keeps its own spacing.
+function ResultSeparator() {
+  return <View className="h-4" />;
+}
 
 export default function SearchResults({ navigation, route }) {
   // Only the search term is this screen's own — veg mode, its scope, the cart
@@ -42,17 +78,32 @@ export default function SearchResults({ navigation, route }) {
   // something to delete without asking.
   const [cartBarDismissed, setCartBarDismissed] = useState(false);
 
-  const openMenu = (restaurant) => navigation?.navigate("Menu", { restaurantId: restaurant.id, restaurantName: restaurant.name });
+  // Held stable so the memoized rows stay memoized: a fresh arrow on every
+  // render would re-render every card the list has mounted.
+  const openMenu = useCallback(
+    (restaurant) =>
+      navigation?.navigate("Menu", { restaurantId: restaurant.id, restaurantName: restaurant.name }),
+    [navigation],
+  );
 
   // Compared by id, not by name — two storefronts can share a name, and the cart
   // only ever knows which restaurant it belongs to by id.
-  const openRestaurant = (restaurant) => {
-    if (cart && String(restaurant.id) !== String(cart.restaurantId)) {
-      setPendingRestaurant(restaurant);
-      return;
-    }
-    openMenu(restaurant);
-  };
+  const openRestaurant = useCallback(
+    (restaurant) => {
+      if (cart && String(restaurant.id) !== String(cart.restaurantId)) {
+        setPendingRestaurant(restaurant);
+        return;
+      }
+      openMenu(restaurant);
+    },
+    [cart, openMenu],
+  );
+
+  const handleToggleFavourite = useCallback(
+    (restaurant) =>
+      toggleFavourite(restaurant.id, isFavourite(restaurant.id, restaurant.isFavorited)),
+    [toggleFavourite, isFavourite],
+  );
 
   const discardCart = async () => {
     const next = pendingRestaurant;
@@ -78,6 +129,43 @@ export default function SearchResults({ navigation, route }) {
     [restaurants],
   );
 
+  const renderResult = useCallback(
+    ({ item }) => (
+      <ResultCard
+        restaurant={item}
+        favourite={isFavourite(item.id, item.isFavorited)}
+        onPress={openRestaurant}
+        onToggleFavourite={handleToggleFavourite}
+      />
+    ),
+    [isFavourite, openRestaurant, handleToggleFavourite],
+  );
+
+  // The heading and the filter rail scroll with the results rather than sitting
+  // in a ScrollView around them — a list can only recycle rows it owns.
+  const listHeader = (
+    <>
+      {/* The field keeps the term as typed; the heading quotes it back
+          lower-cased, the way the frames do. */}
+      <Text className="mt-5 px-6 font-jakarta-bold text-[20px] leading-[28px] text-foreground">
+        Showing results for “{query.toLowerCase()}”
+      </Text>
+
+      <View className="mt-4">
+        <SearchFilterChips
+          selected={filters}
+          vegOnly={vegOnly}
+          onToggle={toggleFilter}
+          // No filter sheet exists yet, so the tile is inert for now.
+          onOpenFilters={() => {}}
+        />
+      </View>
+
+      <SectionHeading className="mt-5 px-6">All restaurants</SectionHeading>
+      <View className="h-3" />
+    </>
+  );
+
   return (
     <Screen edges={["top", "bottom"]}>
       <View className="pt-2" />
@@ -89,59 +177,34 @@ export default function SearchResults({ navigation, route }) {
         onPressField={() => navigation?.goBack()}
       />
 
-      <ScrollView
+      <FlatList
+        data={isLoading || isError ? NO_ROWS : results}
+        renderItem={renderResult}
+        keyExtractor={resultKey}
+        ItemSeparatorComponent={ResultSeparator}
+        ListHeaderComponent={listHeader}
+        ListEmptyComponent={
+          isLoading ? (
+            <View className="mt-7 items-center justify-center">
+              <ActivityIndicator size="large" color="#FF5E00" />
+            </View>
+          ) : isError ? (
+            <Text className="mt-3 px-6 font-jakarta-medium text-[14px] leading-[20px] text-muted-foreground">
+              Couldn't load results. Check your connection and try again.
+            </Text>
+          ) : (
+            <Text className="mt-3 px-6 font-jakarta-medium text-[14px] leading-[20px] text-muted-foreground">
+              No restaurants match these filters.
+            </Text>
+          )
+        }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: cart ? 120 : 40 }}
-      >
-        {/* The field keeps the term as typed; the heading quotes it back
-            lower-cased, the way the frames do. */}
-        <Text className="mt-5 px-6 font-jakarta-bold text-[20px] leading-[28px] text-foreground">
-          Showing results for “{query.toLowerCase()}”
-        </Text>
-
-        <View className="mt-4">
-          <SearchFilterChips
-            selected={filters}
-            vegOnly={vegOnly}
-            onToggle={toggleFilter}
-            // No filter sheet exists yet, so the tile is inert for now.
-            onOpenFilters={() => {}}
-          />
-        </View>
-
-        <SectionHeading className="mt-5 px-6">All restaurants</SectionHeading>
-
-        {isLoading ? (
-          <View className="mt-10 items-center justify-center">
-            <ActivityIndicator size="large" color="#FF5E00" />
-          </View>
-        ) : isError ? (
-          <Text className="mt-6 px-6 font-jakarta-medium text-[14px] leading-[20px] text-muted-foreground">
-            Couldn't load results. Check your connection and try again.
-          </Text>
-        ) : results.length ? (
-          <View className="mt-3 gap-4 px-6">
-            {results.map((restaurant) => {
-              const favourite = isFavourite(restaurant.id, restaurant.isFavorited);
-
-              return (
-                <RestaurantCardLarge
-                  key={restaurant.id}
-                  restaurant={restaurant}
-                  favourite={favourite}
-                  ratingTone="soft"
-                  onToggleFavourite={() => toggleFavourite(restaurant.id, favourite)}
-                  onPress={() => openRestaurant(restaurant)}
-                />
-              );
-            })}
-          </View>
-        ) : (
-          <Text className="mt-6 px-6 font-jakarta-medium text-[14px] leading-[20px] text-muted-foreground">
-            No restaurants match these filters.
-          </Text>
-        )}
-      </ScrollView>
+        {...LIST_PERF}
+        // A card is roughly half a phone screen tall, so this covers the first
+        // viewport and the start of the next.
+        initialNumToRender={4}
+      />
 
       <DiscardCartDialog
         visible={!!pendingRestaurant}

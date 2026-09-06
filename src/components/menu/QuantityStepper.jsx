@@ -10,9 +10,9 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import PressableScale from "@/components/ui/PressableScale";
+import { PressableDim } from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
-import { DURATION, PRESS_SCALE, SPRING } from "@/lib/motion";
+import { DURATION, SPRING } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 // One dish is the floor while a dish is being customised — nothing has been
@@ -87,31 +87,29 @@ export default function QuantityStepper({
       )}
       accessibilityLabel={`Quantity, ${value}`}
     >
-      <PressableScale
+      <PressableDim
         onPress={() => set(value - 1)}
         disabled={value <= min}
         hitSlop={8}
-        scale={PRESS_SCALE.tight}
         accessibilityRole="button"
         accessibilityLabel="Decrease quantity"
         className={cn(value <= min && "opacity-40")}
       >
         <Minus size={metrics.icon} color={accent.icon} />
-      </PressableScale>
+      </PressableDim>
 
       <Count value={value} className={metrics.label} />
 
-      <PressableScale
+      <PressableDim
         onPress={() => set(value + 1)}
         disabled={value >= MAX}
         hitSlop={8}
-        scale={PRESS_SCALE.tight}
         accessibilityRole="button"
         accessibilityLabel="Increase quantity"
         className={cn(value >= MAX && "opacity-40")}
       >
         <Plus size={metrics.icon} color={accent.icon} />
-      </PressableScale>
+      </PressableDim>
     </View>
   );
 }

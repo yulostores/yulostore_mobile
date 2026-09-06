@@ -3,10 +3,9 @@ import { Clock, Leaf } from "lucide-react-native";
 
 import useResponsive from "@/hooks/useResponsive";
 import Card from "@/components/ui/Card";
-import PressableScale from "@/components/ui/PressableScale";
+import { PressableDim } from "@/components/ui/PressableScale";
 import RemoteImage from "@/components/ui/RemoteImage";
 import Text from "@/components/ui/Text";
-import { PRESS_SCALE } from "@/lib/motion";
 import FavouriteHeart from "./FavouriteHeart";
 import RatingPill from "./RatingPill";
 
@@ -35,9 +34,8 @@ export default function RestaurantCardLarge({
       {/* A card this large barely reads a scale, so its press is mostly the
           opacity dip — enough to confirm the tap without the whole feed
           appearing to flex. */}
-      <PressableScale
+      <PressableDim
         onPress={onPress}
-        scale={PRESS_SCALE.subtle}
         accessibilityRole="button"
         accessibilityLabel={name}
       >
@@ -108,7 +106,7 @@ export default function RestaurantCardLarge({
             </View>
           ) : null}
         </View>
-      </PressableScale>
+      </PressableDim>
     </Card>
   );
 }

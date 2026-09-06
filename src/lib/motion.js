@@ -81,6 +81,24 @@ export function stagger(index, { step = STAGGER_STEP, cap = STAGGER_CAP, base = 
 // transforms are dropped entirely.
 export const REDUCE_MOTION = ReduceMotion.System;
 
+// --- Memoised entrance / exit descriptors -----------------------------------
+//
+// Reanimated's `FadeInDown.duration().easing().delay().reduceMotion()` chain
+// allocates a fresh animation descriptor object every time it's called. When
+// `enter()` is invoked inside a render — once per card, per re-render — that's
+// steady allocation churn for an effect that only ever plays once, on mount.
+//
+// The cache below means each unique (builder × duration × base × index) combo
+// builds its descriptor exactly once; subsequent calls return the same object.
+const _enterCache = new Map();
+const _exitCache = new Map();
+
+function enterKey(builder, duration, base, index) {
+  // builder.name is e.g. "FadeInDown"; combined with the numeric params
+  // it produces a short, collision-free string key.
+  return `${builder.name ?? builder.constructor?.name ?? "b"}:${duration}:${base}:${index}`;
+}
+
 /**
  * Standard entrance for content: a short rise with a fade.
  *
@@ -88,14 +106,43 @@ export const REDUCE_MOTION = ReduceMotion.System;
  * @param index   position in a list, for the stagger
  */
 export function enter(builder, { index = 0, base = 0, duration = DURATION.base } = {}) {
-  return builder
-    .duration(duration)
-    .easing(EASE.out)
-    .delay(stagger(index, { base }))
-    .reduceMotion(REDUCE_MOTION);
+  const key = enterKey(builder, duration, base, index);
+  let descriptor = _enterCache.get(key);
+  if (!descriptor) {
+    descriptor = builder
+      .duration(duration)
+      .easing(EASE.out)
+      .delay(stagger(index, { base }))
+      .reduceMotion(REDUCE_MOTION);
+    _enterCache.set(key, descriptor);
+  }
+  return descriptor;
 }
 
 /** Standard exit: faster than the entrance, because nobody waits for a goodbye. */
 export function exit(builder, { duration = DURATION.fast } = {}) {
-  return builder.duration(duration).easing(EASE.in).reduceMotion(REDUCE_MOTION);
+  const key = `${builder.name ?? builder.constructor?.name ?? "b"}:${duration}`;
+  let descriptor = _exitCache.get(key);
+  if (!descriptor) {
+    descriptor = builder.duration(duration).easing(EASE.in).reduceMotion(REDUCE_MOTION);
+    _exitCache.set(key, descriptor);
+  }
+  return descriptor;
+}
+
+/**
+ * Entrance for a row of a virtualized list.
+ *
+ * A virtualized row mounts when it scrolls into view, not when the screen
+ * opens, so handing every row the staggered entrance above would replay the
+ * fade each time the customer scrolls back over it — and, worse, would hold a
+ * row blank for the whole stagger on the way down. The stagger only ever reads
+ * as authored on the rows that are already there when the screen appears, so
+ * that is the only place it's spent; everything scrolled to arrives plain.
+ *
+ * Returns `undefined` past the cap, which is what an Animated.View wants for
+ * "no entrance".
+ */
+export function enterRow(builder, index, options) {
+  return index <= STAGGER_CAP ? enter(builder, { ...options, index }) : undefined;
 }

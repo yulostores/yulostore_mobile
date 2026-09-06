@@ -17,7 +17,7 @@ function StageDot({ state }) {
     return (
       <View
         style={{ width: DOT_SIZE, height: DOT_SIZE, backgroundColor: DONE.ring }}
-        className="items-center justify-center rounded-full shadow-sm"
+        className="items-center justify-center rounded-full"
       >
         <Check size={14} color={DONE.ink} strokeWidth={3} />
       </View>
@@ -28,7 +28,7 @@ function StageDot({ state }) {
     return (
       <View
         style={{ width: DOT_SIZE, height: DOT_SIZE, backgroundColor: LIVE.ring }}
-        className="items-center justify-center rounded-full shadow-sm"
+        className="items-center justify-center rounded-full"
       >
         <View style={{ backgroundColor: LIVE.ink }} className="size-2.5 rounded-full" />
       </View>
@@ -65,7 +65,7 @@ export default function DeliveryTimeline({ stage, timeline = [], className }) {
   );
 
   return (
-    <Card className={`p-5 shadow-lg shadow-black/10 rounded-3xl ${className || ""}`}>
+    <Card className={`p-5 rounded-3xl ${className || ""}`}>
       <Text className="font-jakarta-bold text-[17px] leading-[22px] text-foreground tracking-tight">
         Delivery Timeline
       </Text>

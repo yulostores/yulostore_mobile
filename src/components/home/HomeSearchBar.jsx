@@ -91,7 +91,7 @@ export default function HomeSearchBar({
 
   return (
     <View className="w-full flex-row items-center gap-3">
-      <View className="h-[52px] flex-1 flex-row items-center rounded-full bg-card px-4 shadow-md shadow-black/10">
+      <View className="h-[52px] flex-1 flex-row items-center rounded-full bg-card px-4 border border-black/[0.06]">
         <Search size={18} color="#FF5E00" />
 
         {/* On home the field is a doorway to the dedicated search screen, so it
@@ -144,7 +144,7 @@ export default function HomeSearchBar({
         accessibilityRole="switch"
         accessibilityLabel="Veg only"
         accessibilityState={{ checked: vegOnly }}
-        className="h-[52px] w-16 items-center justify-center rounded-2xl border border-[#43A047] bg-[#EAF6EA] shadow-md shadow-black/10"
+        className="h-[52px] w-16 items-center justify-center rounded-2xl border border-[#43A047] bg-[#EAF6EA]"
       >
         <Text className="font-jakarta-medium text-[10px] leading-[14px] text-muted-foreground">VEG</Text>
         <Text className="font-jakarta-medium text-[8px] leading-[11px] text-muted-foreground">Only</Text>

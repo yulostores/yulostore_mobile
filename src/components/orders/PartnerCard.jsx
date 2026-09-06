@@ -7,7 +7,7 @@ import Text from "@/components/ui/Text";
 
 export default function PartnerCard({ partner, accent, onCall, onChat, className }) {
   return (
-    <Card className={`p-5 shadow-lg shadow-black/10 rounded-3xl ${className || ""}`}>
+    <Card className={`p-5 rounded-3xl ${className || ""}`}>
       <Text className="font-jakarta-bold text-[17px] leading-[22px] text-foreground tracking-tight">
         Delivery Partner
       </Text>
@@ -15,7 +15,7 @@ export default function PartnerCard({ partner, accent, onCall, onChat, className
       <View className="mt-4 flex-row items-center gap-4">
         <View
           style={{ backgroundColor: accent.icon }}
-          className="size-14 items-center justify-center rounded-full shadow-sm"
+          className="size-14 items-center justify-center rounded-full"
         >
           <Text className="font-jakarta-bold text-[17px] leading-[22px] text-white">
             {partner.initials}
@@ -51,7 +51,7 @@ export default function PartnerCard({ partner, accent, onCall, onChat, className
           variant="secondary"
           size="sm"
           style={{ borderColor: accent.icon }}
-          className="flex-1 py-3 rounded-2xl bg-white shadow-sm"
+          className="flex-1 py-3 rounded-2xl bg-white"
           accessibilityLabel={`Call ${partner.name}`}
         >
           <>
@@ -70,7 +70,7 @@ export default function PartnerCard({ partner, accent, onCall, onChat, className
           variant="secondary"
           size="sm"
           style={{ borderColor: accent.icon }}
-          className="flex-1 py-3 rounded-2xl bg-white shadow-sm"
+          className="flex-1 py-3 rounded-2xl bg-white"
           accessibilityLabel={`Chat with ${partner.name}`}
         >
           <>

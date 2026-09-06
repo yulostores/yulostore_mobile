@@ -17,7 +17,7 @@ export default function AddressCard({ address, selected, accent, onPress, onDele
       style={selected ? { borderColor: accent.icon } : undefined}
       className={cn(
         "w-full flex-row items-center gap-3 rounded-2xl bg-card p-4",
-        selected ? "border-2" : "shadow-sm shadow-black/10",
+        selected ? "border-2" : "",
       )}
       accessibilityRole="radio"
       accessibilityState={{ selected }}

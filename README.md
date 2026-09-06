@@ -1,6 +1,6 @@
 # Yulo Stores — Customer Portal
 
-Expo (SDK 54) React Native client for the customer-facing storefront.
+Expo (SDK 57) React Native client for the customer-facing storefront.
 
 ## Running it
 
@@ -12,9 +12,9 @@ npm start          # then scan the QR code with Expo Go
 The app boots fully in **Expo Go**. Nothing has to be built natively to walk
 onboarding → login → feed → menu → cart → checkout → tracking → account.
 
-> **Expo Go version matters.** This project is on SDK 54, and the Expo Go in the
+> **Expo Go version matters.** This project is on SDK 57, and the Expo Go in the
 > app stores tracks the newest SDK. If the QR code opens to a version error, get
-> the SDK 54 build from <https://expo.dev/go>.
+> the SDK 57 build from <https://expo.dev/go>.
 
 No `.env` is needed for a local run: in development the app derives the API host
 from the Metro bundle URL, so a phone on the same Wi-Fi finds your laptop without

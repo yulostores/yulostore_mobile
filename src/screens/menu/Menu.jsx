@@ -1,5 +1,10 @@
-import { useMemo, useRef, useState } from "react";
-import { Alert, Keyboard, ScrollView, Share, View } from "react-native";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { Alert, Keyboard, Share, View } from "react-native";
+import Animated, {
+  useAnimatedRef,
+  useAnimatedScrollHandler,
+  useSharedValue,
+} from "react-native-reanimated";
 import { List } from "lucide-react-native";
 
 import { useFeed } from "@/context/FeedContext";
@@ -74,7 +79,9 @@ export default function Menu({ navigation, menu, restaurantName }) {
   const [query, setQuery] = useState("");
   const [searching, setSearching] = useState(false);
   const [indexOpen, setIndexOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState(menu.sections[0]?.id);
+  // The active section is a Reanimated shared value so it can be written by
+  // the scroll worklet on the UI thread without crossing to JS.
+  const activeSectionIndex = useSharedValue(0);
   // Hides the cart summary without throwing the order away.
   const [cartBarDismissed, setCartBarDismissed] = useState(false);
 
@@ -85,13 +92,18 @@ export default function Menu({ navigation, menu, restaurantName }) {
   // The dish whose customisation sheet is up, if any.
   const [customising, setCustomising] = useState(null);
 
-  const scrollRef = useRef(null);
+  const scrollRef = useAnimatedRef();
   // Grid: a folded group reports its card's offset for every section inside
   // it. Compact: section/group offsets are kept separately because the two
   // are measured independently and in no fixed order.
   const offsets = useRef({});
   const sectionOffsets = useRef({});
   const groupOffsets = useRef({});
+
+  // A mirror of sectionOffsets stored as a shared value so the scroll worklet
+  // can read the offset array on the UI thread. Updated every time a compact
+  // section fires onLayout.
+  const sectionOffsetsShared = useSharedValue([]);
 
   const sections = useMemo(
     () => filterSections(menu.sections, { diet: effectiveDiet, query }),
@@ -156,17 +168,30 @@ export default function Menu({ navigation, menu, restaurantName }) {
     if (y != null) scrollRef.current?.scrollTo({ y: Math.max(y - 12, 0), animated: true });
   };
 
-  const handleScroll = (event) => {
-    const line = event.nativeEvent.contentOffset.y + ACTIVE_LINE;
+  // Syncs the JS-side sectionOffsets ref into the shared value so the UI-thread
+  // worklet can read them. Called from every compact section's onLayout.
+  const syncSectionOffsets = useCallback(() => {
+    const arr = sections.map((s) => sectionOffsets.current[s.id] ?? -1);
+    sectionOffsetsShared.value = arr;
+  }, [sections, sectionOffsetsShared]);
 
-    let current = sections[0]?.id;
-    for (const section of sections) {
-      const top = sectionOffsets.current[section.id];
-      if (top != null && top <= line) current = section.id;
-    }
+  // Runs entirely on the UI thread — no JS bridge crossing, no setState.
+  const handleScroll = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      "worklet";
+      const line = event.contentOffset.y + ACTIVE_LINE;
+      const offsets = sectionOffsetsShared.value;
 
-    if (current && current !== activeSection) setActiveSection(current);
-  };
+      let current = 0;
+      for (let i = 0; i < offsets.length; i++) {
+        if (offsets[i] >= 0 && offsets[i] <= line) current = i;
+      }
+
+      if (current !== activeSectionIndex.value) {
+        activeSectionIndex.value = current;
+      }
+    },
+  });
 
   const endSearch = () => {
     setQuery("");
@@ -252,12 +277,12 @@ export default function Menu({ navigation, menu, restaurantName }) {
 
   return (
     <Screen edges={["bottom"]} statusBarStyle="light">
-      <ScrollView
+      <Animated.ScrollView
         ref={scrollRef}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
         onScroll={compact ? handleScroll : undefined}
-        scrollEventThrottle={compact ? 32 : undefined}
+        scrollEventThrottle={compact ? 16 : undefined}
         // Only the compact rail (index 3: hero, info card, note/spacer, rail)
         // sticks to the top — the grid's diet tabs scroll away with the rest.
         stickyHeaderIndices={compact ? [3] : undefined}
@@ -304,7 +329,7 @@ export default function Menu({ navigation, menu, restaurantName }) {
           <View className="bg-background pt-1">
             <MenuCategoryTabs
               sections={sections}
-              value={activeSection}
+              activeSectionIndex={activeSectionIndex}
               accent={accent}
               onSelect={jumpToSection}
             />
@@ -323,6 +348,7 @@ export default function Menu({ navigation, menu, restaurantName }) {
                 className="mt-6 px-6"
                 onLayout={(event) => {
                   sectionOffsets.current[section.id] = event.nativeEvent.layout.y;
+                  syncSectionOffsets();
                 }}
               >
                 <View className="flex-row items-center justify-between gap-3">
@@ -389,7 +415,7 @@ export default function Menu({ navigation, menu, restaurantName }) {
             {query.trim() ? `No dishes match “${query.trim()}”.` : "No dishes match this filter."}
           </Text>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
 
       <MenuIndexSheet
         visible={indexOpen}

@@ -9,8 +9,9 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
-import PressableScale from "@/components/ui/PressableScale";
-import { DURATION, PRESS_SCALE, SPRING } from "@/lib/motion";
+import { PressableDim } from "@/components/ui/PressableScale";
+import { DURATION, SPRING } from "@/lib/motion";
+
 
 const FILLED = "#E53935";
 
@@ -44,10 +45,9 @@ export default function FavouriteHeart({ favourite, label, onPress, size = 24 })
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
   return (
-    <PressableScale
+    <PressableDim
       onPress={onPress}
       hitSlop={8}
-      scale={PRESS_SCALE.tight}
       className="absolute right-4 top-4 size-10 items-center justify-center rounded-full bg-black/20"
       accessibilityRole="button"
       accessibilityLabel={favourite ? `Remove ${label} from favourites` : `Add ${label} to favourites`}
@@ -60,6 +60,6 @@ export default function FavouriteHeart({ favourite, label, onPress, size = 24 })
           fill={favourite ? FILLED : "transparent"}
         />
       </Animated.View>
-    </PressableScale>
+    </PressableDim>
   );
 }

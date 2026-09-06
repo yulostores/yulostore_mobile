@@ -3,7 +3,7 @@ import { Plus, Utensils } from "lucide-react-native";
 
 import useResponsive from "@/hooks/useResponsive";
 import Card from "@/components/ui/Card";
-import PressableScale from "@/components/ui/PressableScale";
+import { PressableDim } from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
 import { formatPrice, savingFor } from "@/data/menu";
 import { cn } from "@/lib/utils";
@@ -94,7 +94,7 @@ export default function MenuItemCard({ item, accent, onAdd }) {
             </Text>
           </View>
 
-          <PressableScale
+          <PressableDim
             onPress={onAdd}
             style={{ borderColor: accent.icon }}
             className="mt-3 h-11 w-full flex-row items-center justify-center gap-1 rounded-full border-[1.5px] bg-card"
@@ -105,7 +105,7 @@ export default function MenuItemCard({ item, accent, onAdd }) {
             <Text style={{ color: accent.icon }} className="font-jakarta-semibold text-[14px]">
               Add
             </Text>
-          </PressableScale>
+          </PressableDim>
         </View>
       </View>
     </Card>

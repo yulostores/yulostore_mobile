@@ -10,9 +10,11 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useQueryClient } from "@tanstack/react-query";
 
-import { VEG_SCOPES } from "@/components/home/VegModePopover";
+import { getStorageSnapshot, whenStorageReady } from "@/api/launch";
 import { useCart } from "@/hooks/useCart";
 import { useToggleFavorite, useUpdatePreferences } from "@/hooks/useUser";
+import { FEED_KEY } from "@/lib/storageKeys";
+import { DEFAULT_VEG_SCOPE } from "@/lib/vegMode";
 import { useCustomerAuth } from "./CustomerAuthContext";
 
 // Home, Search and SearchResults all render the same feed state — the open cart,
@@ -27,7 +29,11 @@ const FeedContext = createContext(null);
 // turned it on doesn't expect to be shown meat again after the OS reclaimed a
 // backgrounded app. The cart is deliberately NOT stored here: it lives
 // server-side, so it's already the same cart on every device.
-const FEED_KEY = "yulo_customer_feed";
+//
+// Reading it is src/api/launch.js's job now, not this provider's: veg mode is half of
+// the home-feed query key, so the launch prefetch can't build the key without it, and
+// hydrating it a render late meant Home fired one feed request under the default
+// preference and a second under the customer's real one a beat afterwards.
 
 export function FeedProvider({ children }) {
   const { cart, bill, isLoading: cartLoading, addItem, updateItem, discardCart } = useCart();
@@ -41,28 +47,25 @@ export function FeedProvider({ children }) {
   // this from a hardcoded list is what used to make demo restaurants show up
   // favourited for every real customer.
   const [favouriteOverrides, setFavouriteOverrides] = useState({});
-  const [vegOnly, setVegOnly] = useState(false);
-  const [vegScope, setVegScope] = useState(VEG_SCOPES.ALL);
+
+  const launchStorage = getStorageSnapshot();
+  const [vegOnly, setVegOnly] = useState(launchStorage?.vegOnly ?? false);
+  const [vegScope, setVegScope] = useState(launchStorage?.vegScope ?? DEFAULT_VEG_SCOPE);
 
   // Nothing is written back until the stored copy has been read, or the first
   // render would overwrite the saved preference with the default.
-  const hydrated = useRef(false);
+  const hydrated = useRef(!!launchStorage);
 
   useEffect(() => {
+    if (hydrated.current) return;
     let cancelled = false;
 
-    AsyncStorage.getItem(FEED_KEY)
-      .then((raw) => {
-        if (cancelled || !raw) return;
-        const stored = JSON.parse(raw);
-        if (stored.vegOnly !== undefined) setVegOnly(!!stored.vegOnly);
-        if (stored.vegScope) setVegScope(stored.vegScope);
-      })
-      // An unreadable cached value must not wedge the feed — drop it and carry on.
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) hydrated.current = true;
-      });
+    whenStorageReady().then((storage) => {
+      if (cancelled) return;
+      setVegOnly(storage.vegOnly);
+      setVegScope(storage.vegScope);
+      hydrated.current = true;
+    });
 
     return () => {
       cancelled = true;

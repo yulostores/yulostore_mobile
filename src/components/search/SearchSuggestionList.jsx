@@ -44,7 +44,7 @@ export default function SearchSuggestionList({ items, matchLength = 0, vegOnly =
   if (!items.length) return null;
 
   return (
-    <View className="mx-4 rounded-3xl bg-card px-4 py-2 shadow-md shadow-black/10">
+    <View className="mx-4 rounded-3xl bg-card px-4 py-2 border border-black/[0.06]">
       {items.map((item) => (
         <Pressable
           key={item.id}

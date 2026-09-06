@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
-import { Bell, Clock, FlaskConical, Heart, Leaf, LifeBuoy, LogOut, MapPin } from "lucide-react-native";
+import { Bell, ChevronRight, Clock, FlaskConical, Heart, Leaf, LifeBuoy, LogOut, MapPin } from "lucide-react-native";
 
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useFeed } from "@/context/FeedContext";
@@ -9,7 +9,9 @@ import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
 import PageHeader from "@/components/customer/PageHeader";
 import SettingsRow from "@/components/customer/SettingsRow";
+import PressableScale from "@/components/ui/PressableScale";
 import { accentFor } from "@/lib/accent";
+import { PRESS_SCALE } from "@/lib/motion";
 
 const AVATAR = 56;
 
@@ -41,7 +43,10 @@ export default function Profile({ navigation }) {
   const accent = accentFor(vegOnly);
   const [signingOut, setSigningOut] = useState(false);
 
-  const name = user?.name ?? "Guest";
+  // Only ever empty on an account that predates the sign-up name step — the row below
+  // says so and leads straight to the screen that fixes it, rather than labelling a real
+  // customer "Guest" and leaving them no way to correct it.
+  const name = user?.name?.trim() || "Add your name";
   const phone = user?.phone ?? pendingPhone;
 
   // Signing out drops the stack as well as the session — leaving the account
@@ -88,7 +93,16 @@ export default function Profile({ navigation }) {
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
         <PageHeader title="Profile" size="lg" />
 
+        {/* The identity card is a destination now, not a static header: the name printed
+            on every order the restaurant and the delivery partner see is edited here, and
+            an account created before that name was ever asked for needs somewhere to go. */}
         <View className="mt-5 px-5">
+          <PressableScale
+            onPress={() => go("EditProfile")}
+            scale={PRESS_SCALE.subtle}
+            accessibilityRole="button"
+            accessibilityLabel="Edit your details"
+          >
           <Card className="w-full flex-row items-center gap-3 p-4">
             <View
               style={{ width: AVATAR, height: AVATAR, backgroundColor: accent.icon }}
@@ -108,7 +122,10 @@ export default function Profile({ navigation }) {
                 {formatPhone(phone)}
               </Text>
             </View>
+
+            <ChevronRight size={20} color="#999999" />
           </Card>
+          </PressableScale>
         </View>
 
         <View className="mt-5 gap-2.5 px-5">

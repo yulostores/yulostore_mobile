@@ -3,7 +3,7 @@ import { Clock } from "lucide-react-native";
 import Svg, { Path } from "react-native-svg";
 
 import useResponsive from "@/hooks/useResponsive";
-import PressableScale from "@/components/ui/PressableScale";
+import { PressableDim } from "@/components/ui/PressableScale";
 import RemoteImage from "@/components/ui/RemoteImage";
 import Text from "@/components/ui/Text";
 import RatingPill from "./RatingPill";
@@ -95,7 +95,7 @@ export default function RestaurantCardSmall({ restaurant, ratingTone, onPress })
   const { name, image, fallbackImage, rating, deliveryTime, offer, photoCount = 3 } = restaurant;
 
   return (
-    <PressableScale
+    <PressableDim
       onPress={onPress}
       style={{ width: size(CARD_WIDTH), height: size(WRAPPER_HEIGHT) }}
       accessibilityRole="button"
@@ -139,6 +139,6 @@ export default function RestaurantCardSmall({ restaurant, ratingTone, onPress })
         className="absolute"
         style={{ left: size(PILL_LEFT), top: size(PILL_TOP) }}
       />
-    </PressableScale>
+    </PressableDim>
   );
 }

@@ -29,7 +29,7 @@ export default function SearchTopBar({
     <View className="w-full flex-row items-center gap-2 px-4">
       <BackButton size={24} className="size-11 items-center justify-center" />
 
-      <View className="h-[52px] flex-1 flex-row items-center rounded-2xl bg-card px-4 shadow-md shadow-black/10">
+      <View className="h-[52px] flex-1 flex-row items-center rounded-2xl bg-card px-4 border border-black/[0.06]">
         <Search size={20} color={accent.icon} />
 
         {/* On the results screen the field only shows the committed term and

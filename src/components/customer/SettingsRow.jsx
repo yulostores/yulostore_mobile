@@ -32,8 +32,8 @@ export default function SettingsRow({ label, icon: Icon, tone = "default", onPre
       className={cn(
         "w-full flex-row items-center gap-3 rounded-2xl border px-4 py-3.5",
         destructive
-          ? "border-[#D9453F] bg-[#D9453F] shadow-sm shadow-black/15"
-          : "border-black/[0.06] bg-card shadow-sm shadow-black/10",
+          ? "border-[#D9453F] bg-[#D9453F]"
+          : "border-black/[0.06] bg-card",
         className,
       )}
     >

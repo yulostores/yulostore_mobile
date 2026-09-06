@@ -1,11 +1,11 @@
 import { useEffect, useMemo } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { io } from "socket.io-client";
 
 import client, { getAccessToken } from "@/api/client";
 import { API_BASE } from "@/api/config";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useFeatureEnabled } from "@/context/FeatureFlagsContext";
+import { useSocket } from "@/context/SocketContext";
 
 // `GET /orders` → { orders, total, page }. `select` unwraps it so callers get the
 // array they actually render — passing the envelope through was crashing the
@@ -56,27 +56,36 @@ export function useOrderDetails(orderId) {
 // the ["restaurant", id] cache with the menu screen, so a history of ten orders
 // from one place is a single request.
 export function useRestaurantNames(restaurantIds = []) {
+  const queryClient = useQueryClient();
+  
   // Callers pass a freshly-mapped array on every render (`orders.map(o => …)`),
   // so this is keyed on the ids themselves rather than the array's identity —
   // otherwise nothing downstream of it ever memoises.
   const idKey = restaurantIds.map(String).filter(Boolean).sort().join(",");
-
   const uniqueIds = useMemo(() => (idKey ? [...new Set(idKey.split(","))] : []), [idKey]);
 
-  // `combine` runs inside useQueries, so the map it builds is only recomputed
-  // when a query's data actually changes — returning a new object on every
-  // render made every consumer of this hook re-render with it.
-  return useQueries({
-    queries: uniqueIds.map((id) => ({
-      queryKey: ["restaurant", id],
-      queryFn: () => client.get(`/restaurants/${id}`),
-      staleTime: 10 * 60 * 1000,
-    })),
-    combine: (results) =>
-      Object.fromEntries(
-        uniqueIds.map((id, index) => [id, results[index]?.data?.restaurant?.name ?? null]),
-      ),
+  const { data } = useQuery({
+    queryKey: ["restaurants", "batch", idKey],
+    queryFn: async () => {
+      if (uniqueIds.length === 0) return {};
+      
+      const response = await client.get(`/restaurants?ids=${uniqueIds.join(",")}`);
+      const restaurants = response?.restaurants ?? [];
+      
+      const map = {};
+      restaurants.forEach((r) => {
+        // Pre-warm the cache for individual lookups (like useCart)
+        queryClient.setQueryData(["restaurant", r._id], { restaurant: r });
+        map[r._id] = r.name;
+      });
+      
+      return map;
+    },
+    enabled: uniqueIds.length > 0,
+    staleTime: 10 * 60 * 1000,
   });
+
+  return data ?? {};
 }
 
 export function useReorder() {
@@ -138,73 +147,14 @@ export function useVegFleetActions(orderId) {
 // otherwise room membership ends up checked against a token the app no longer
 // considers current (Gotcha #9).
 export function useOrderSocket(orderId) {
-  const queryClient = useQueryClient();
-  const { sessionReady } = useCustomerAuth();
-  // Pure JS, but it needs a reachable socket server. Pointed at a laptop that
-  // is only serving REST, the client retries the handshake indefinitely and
-  // fills the log with connection errors that look like an app bug. Switching
-  // this off in the dev flag panel leaves the rest of the order flow — which is
-  // all plain HTTP — testable on its own.
-  const liveTracking = useFeatureEnabled("liveTracking");
+  const { joinOrder, leaveOrder } = useSocket();
 
   useEffect(() => {
-    if (!orderId || !sessionReady || !liveTracking) return;
+    if (!orderId) return;
 
-    const token = getAccessToken();
-    if (!token) return;
-
-    const socket = io(API_BASE, {
-      auth: { token },
-      transports: ["websocket"],
-    });
-
-    const join = () => socket.emit("join_order", { orderId, token: getAccessToken() });
-    socket.on("connect", join);
-    socket.on("reconnect", join);
-
-    socket.on("order_status_updated", (payload) => {
-      if (String(payload?.orderId) !== String(orderId)) return;
-
-      queryClient.setQueryData(["orderTracking", orderId], (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          status: payload.status,
-          timeline: (old.timeline ?? []).map((stage) =>
-            stage.stage === payload.status
-              ? { ...stage, completed: true, timestamp: payload.updatedAt ?? stage.timestamp }
-              : stage,
-          ),
-        };
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["order", orderId] });
-      queryClient.invalidateQueries({ queryKey: ["orders"] });
-    });
-
-    socket.on("partner_location_updated", (payload) => {
-      if (String(payload?.orderId) !== String(orderId)) return;
-
-      queryClient.setQueryData(["orderTracking", orderId], (old) =>
-        old
-          ? {
-              ...old,
-              deliveryPartner: { ...old.deliveryPartner, lat: payload.lat, lng: payload.lng },
-            }
-          : old,
-      );
-    });
-
-    socket.on("veg_fleet_status_updated", (payload) => {
-      if (String(payload?.orderId) !== String(orderId)) return;
-      queryClient.setQueryData(["vegFleetStatus", orderId], payload);
-    });
-
-    return () => {
-      socket.removeAllListeners();
-      socket.disconnect();
-    };
-  }, [orderId, queryClient, sessionReady, liveTracking]);
+    joinOrder(orderId);
+    return () => leaveOrder(orderId);
+  }, [orderId, joinOrder, leaveOrder]);
 }
 
 export function useSubmitReview() {

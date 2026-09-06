@@ -12,7 +12,7 @@ import Button from "@/components/ui/Button";
 import BackButton from "@/components/customer/BackButton";
 
 export default function LocationSetup({ onNext }) {
-  const { deliveryLocation, setDeliveryLocation } = useCustomerAuth();
+  const { deliveryLocation, setDeliveryLocation, addresses, addAddress } = useCustomerAuth();
   const inputRef = useRef(null);
   // Reopening this screen to change an existing address should show that
   // address as editable text, not a blank field the GPS lookup is about to
@@ -33,6 +33,42 @@ export default function LocationSetup({ onNext }) {
   // key stays a second route to the same action.
   const hasTypedAddress = query.trim().length > 0;
 
+  // This screen used to set `deliveryLocation` and stop there — a value that lives only in
+  // AsyncStorage on this device. Checkout doesn't read it: an order is placed against a
+  // SAVED address (services/order.service.js's createOrderFromCart, which 400s with "No
+  // delivery address available" without one). So a customer finished location setup and
+  // was still told "Add a delivery address" the moment they reached the cart, with no
+  // indication that the thing they had just done wasn't the thing being asked for.
+  //
+  // Two notions of "where I am" that never met. They meet here: the location the customer
+  // sets up becomes their first saved address, so setup produces something an order can
+  // actually be placed against.
+  //
+  // Only the FIRST one, though — reopening this screen to change where the feed is
+  // centred is not a request to add another entry to the address book, which is what the
+  // book itself (Profile → Saved addresses) is for.
+  const persistLocation = async (location) => {
+    setDeliveryLocation(location);
+
+    if (addresses.length > 0) return;
+
+    try {
+      await addAddress({
+        label: "Home",
+        line: location.label,
+        city: location.city ?? "",
+        state: location.state ?? "",
+        pincode: location.pincode ?? "",
+        coords: location.coords ?? null,
+      });
+    } catch {
+      // Deliberately swallowed: the address book is a convenience being seeded here, not
+      // the point of this screen. A failure (offline, a label the server rejects) must
+      // still let the customer through to the feed with their delivery location set —
+      // they can add the address from the cart, which is where it's actually required.
+    }
+  };
+
   const handleUseCurrentLocation = async () => {
     if (!canUseGps) {
       setError(explainFeature(locationFeature));
@@ -42,8 +78,13 @@ export default function LocationSetup({ onNext }) {
     setError("");
     setLocating(true);
     try {
-      const location = await fetchDeviceLocation();
-      setDeliveryLocation(location);
+      // Unlike Home's silent recovery, what comes back here is persisted as the
+      // customer's first saved address, so it's worth waiting past the default
+      // budget for the precise fix rather than saving the OS's cached one. The
+      // wait is still bounded — the spinner can't sit here indefinitely — and
+      // whatever the lookup has by then is what gets saved.
+      const location = await fetchDeviceLocation({ preciseTimeoutMs: 15000 });
+      await persistLocation(location);
       onNext();
     } catch (err) {
       setError(
@@ -67,13 +108,20 @@ export default function LocationSetup({ onNext }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // There's no server-side geocoding, so a typed address can't be resolved to
-  // coordinates — the feed falls back to the city centre for it. Saying so is
-  // better than silently showing restaurants near somewhere else.
-  const handleManualSubmit = () => {
-    if (!hasTypedAddress) return;
-    setDeliveryLocation({ label: query.trim(), coords: null });
-    onNext();
+  // A typed address carries no coordinates of its own. It isn't left without them, though:
+  // the server geocodes a saved address that arrives without a fix (services/
+  // user.service.js), using the same provider that already resolves restaurant addresses.
+  // The feed still centres on the city until that address comes back with a point, which
+  // is why the GPS shortcut above stays the better path where it's available.
+  const handleManualSubmit = async () => {
+    if (!hasTypedAddress || locating) return;
+    setLocating(true);
+    try {
+      await persistLocation({ label: query.trim(), coords: null });
+      onNext();
+    } finally {
+      setLocating(false);
+    }
   };
 
   return (
@@ -128,7 +176,9 @@ export default function LocationSetup({ onNext }) {
         <View className="gap-3 px-6 pb-10">
           {hasTypedAddress ? (
             <>
-              <Button onPress={handleManualSubmit}>Use this address</Button>
+              <Button disabled={locating} onPress={handleManualSubmit}>
+                {locating ? "Saving..." : "Use this address"}
+              </Button>
               {canUseGps ? (
                 <Button variant="secondary" disabled={locating} onPress={handleUseCurrentLocation}>
                   {locating ? "Locating..." : "Use current location"}

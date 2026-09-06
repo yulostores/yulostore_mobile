@@ -15,7 +15,7 @@ const TILE_SIZE = 40;
 
 export default function OrderSummaryCard({ order, accent, vegOnly, className }) {
   return (
-    <Card className={`p-5 shadow-lg shadow-black/10 rounded-3xl ${className || ""}`}>
+    <Card className={`p-5 rounded-3xl ${className || ""}`}>
       <View className="flex-row items-center justify-between gap-3">
         <Text className="font-jakarta-bold text-[17px] leading-[22px] text-foreground tracking-tight">
           Order Details
@@ -37,7 +37,7 @@ export default function OrderSummaryCard({ order, accent, vegOnly, className }) 
             <View key={line.id} className="flex-row items-center gap-3 py-2.5">
               <View
                 style={{ width: TILE_SIZE, height: TILE_SIZE, backgroundColor: GLYPH_TILE }}
-                className="items-center justify-center rounded-xl shadow-sm"
+                className="items-center justify-center rounded-xl"
               >
                 <Glyph size={20} color={veg ? VEG_INK : accent.icon} strokeWidth={2.2} />
               </View>

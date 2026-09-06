@@ -24,6 +24,8 @@ const MESSAGES = {
     "We couldn't send the code right now. Please try again in a minute, or contact support if it keeps happening.",
   SMS_QUOTA_EXHAUSTED:
     "We couldn't send the code right now. Please try again shortly, or contact support if it keeps happening.",
+  OTP_STORE_UNAVAILABLE:
+    "Login is temporarily unavailable on our side. Please try again in a few minutes.",
   ACCOUNT_SUSPENDED: "This account has been suspended. Please contact support.",
 
   // ── Session ──

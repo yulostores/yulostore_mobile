@@ -4,22 +4,34 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import client, { onSessionExpired, refreshSession, setAccessToken } from "@/api/client";
-
-const PROFILE_KEY = "yulo_customer_profile";
-const ONBOARDING_SEEN_KEY = "yulo_customer_onboarding_seen";
-const LOCATION_KEY = "yulo_customer_location";
+import client, { onSessionExpired, setAccessToken } from "@/api/client";
+import {
+  getSessionSnapshot,
+  getStorageSnapshot,
+  whenSessionReady,
+  whenStorageReady,
+} from "@/api/launch";
+import { LOCATION_KEY, ONBOARDING_SEEN_KEY, PROFILE_KEY } from "@/lib/storageKeys";
 
 const CustomerAuthContext = createContext(null);
 
 // Address labels are a fixed set server-side ("home" | "work" | "other"); anything
 // the customer types lands in `customLabel`. The list screens want one display
 // string, so the two collapse here rather than in every consumer.
+// The address endpoints validate what they're sent rather than what they're not: an
+// empty string trips `min(1)` on customLabel/contactName and is stored verbatim on
+// city/pincode, so a field the customer left blank has to be left OUT, not sent empty.
+function optionalField(key, value) {
+  const trimmed = typeof value === "string" ? value.trim() : value;
+  return trimmed ? { [key]: trimmed } : {};
+}
+
 export function toDisplayAddress(address) {
   if (!address) return null;
 
@@ -38,23 +50,41 @@ export function toDisplayAddress(address) {
 }
 
 export function CustomerAuthProvider({ children }) {
-  const [user, setUser] = useState(null);
+  // The cached profile, the onboarding flag and the delivery address are all read by
+  // src/api/launch.js at import time, well before this provider mounts — so on most
+  // cold starts the answers are already sitting there and this can open with them
+  // rather than opening empty and flipping a render later. That flip is what used to
+  // put the Splash screen (and its wait for `sessionReady`) in front of a returning
+  // customer who was already signed in.
+  const launchStorage = getStorageSnapshot();
+  const launchSessionRestored = getSessionSnapshot();
+
+  const [user, setUser] = useState(launchStorage?.profile ?? null);
   const [pendingPhone, setPendingPhone] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const [hydrated, setHydrated] = useState(!!launchStorage);
   const [devOtp, setDevOtp] = useState(null);
   // The server sets this when SMS_PROVIDER=bypass — no SMS is being sent at all. Surfaced
   // on the OTP screen so the customer isn't left waiting out the resend timer for a
   // message that will never arrive.
   const [otpBypass, setOtpBypass] = useState(false);
-  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(false);
-  const [deliveryLocation, setDeliveryLocationState] = useState(null);
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(
+    launchStorage?.hasSeenOnboarding ?? false,
+  );
+  const [deliveryLocation, setDeliveryLocationState] = useState(
+    launchStorage?.deliveryLocation ?? null,
+  );
   // The access token is memory-only, so a cold start always begins without one even
   // when the cached profile says we're signed in. Nothing authenticated may fire
   // until the cookie has been traded for a fresh token, or the whole app stampedes
   // the refresh endpoint with 401s on its first frame.
-  const [sessionReady, setSessionReady] = useState(false);
+  const [sessionReady, setSessionReady] = useState(launchSessionRestored !== null);
   const queryClient = useQueryClient();
+  // Each half of the bootstrap resolves once per process and is adopted at most once,
+  // however many times the effect below re-runs. Without this, a re-run after a
+  // sign-out would resurrect the very profile it had just cleared.
+  const storageApplied = useRef(false);
+  const sessionApplied = useRef(false);
 
   const clearSession = useCallback(() => {
     setAccessToken(null);
@@ -66,50 +96,35 @@ export function CustomerAuthProvider({ children }) {
     queryClient.clear();
   }, [queryClient]);
 
-  // A refresh that fails for good means the cookie is gone or revoked — drop the
-  // cached profile so the app stops presenting a session it no longer has.
+  // The same treatment for a session that expires later, mid-use: api/client.js calls
+  // every subscriber here once a refresh has definitively failed.
   useEffect(() => onSessionExpired(clearSession), [clearSession]);
 
+  // Both milestones the bootstrap publishes, adopted as they land. Nothing is read or
+  // requested here — that all started at import time; this only mirrors the results
+  // into state so the navigator can react to them. Whether the bootstrap finished
+  // before this mounted or finishes after it, the same two callbacks do the work: an
+  // already-settled promise still calls back, one microtask later.
   useEffect(() => {
-    let cancelled = false;
+    whenStorageReady().then((storage) => {
+      if (storageApplied.current) return;
+      storageApplied.current = true;
 
-    (async () => {
-      let cachedUser = null;
-      try {
-        const [rawProfile, seenOnboarding, rawLocation] = await Promise.all([
-          AsyncStorage.getItem(PROFILE_KEY),
-          AsyncStorage.getItem(ONBOARDING_SEEN_KEY),
-          AsyncStorage.getItem(LOCATION_KEY),
-        ]);
-
-        if (cancelled) return;
-        if (rawProfile) cachedUser = JSON.parse(rawProfile);
-        if (cachedUser) setUser(cachedUser);
-        if (seenOnboarding) setHasSeenOnboarding(true);
-        if (rawLocation) setDeliveryLocationState(JSON.parse(rawLocation));
-      } catch {
-        // An unreadable cache must not wedge launch — carry on signed out.
-      }
-
-      if (cancelled) return;
+      if (storage.profile) setUser(storage.profile);
+      if (storage.hasSeenOnboarding) setHasSeenOnboarding(true);
+      if (storage.deliveryLocation) setDeliveryLocationState(storage.deliveryLocation);
       setHydrated(true);
+    });
 
-      // Only worth a round-trip if we look signed in; a first-run install has no
-      // cookie to trade and should go straight to the login screen.
-      if (cachedUser) {
-        try {
-          await refreshSession();
-        } catch {
-          if (!cancelled) clearSession();
-        }
-      }
+    whenSessionReady().then((restored) => {
+      if (sessionApplied.current) return;
+      sessionApplied.current = true;
 
-      if (!cancelled) setSessionReady(true);
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+      // A refresh that failed for good means the cookie is gone or revoked — drop the
+      // cached profile so the app stops presenting a session it no longer has.
+      if (getStorageSnapshot()?.profile && !restored) clearSession();
+      setSessionReady(true);
+    });
   }, [clearSession]);
 
   const { data: remoteProfile } = useQuery({
@@ -221,11 +236,21 @@ export function CustomerAuthProvider({ children }) {
     [deleteAddressMutation],
   );
 
-  // There's no server-side geocoding (see "What's Not Built Yet"), so coordinates
-  // come from whatever the device resolved during location setup, falling back to
-  // the city centre only when the customer typed an address by hand.
+  // Every field here is either something the customer actually entered or something the
+  // device actually resolved — nothing is invented.
+  //
+  // It used to substitute "Bangalore" / "Karnataka" / "560001" and the Bengaluru city
+  // centre for anything the form didn't ask for, which it asked for almost none of. That
+  // wasn't a cosmetic default: those coordinates are what the delivery fee, the partner's
+  // distance pay, the ETA and partner eligibility are all computed from, so every customer
+  // outside that one point had an order priced and routed against a place they'd never
+  // been. A missing city is now simply omitted, and the server geocodes the address it was
+  // given (services/user.service.js) — a real lookup instead of a fabricated answer.
+  //
+  // A device fix still wins when there is one: the server only geocodes when no
+  // coordinates arrive, and a GPS reading beats anything inferred from a typed line.
   const addAddress = useCallback(
-    ({ label, line, customLabel = "", city, state, pincode, coords }) => {
+    ({ label, line, customLabel = "", city, state, pincode, coords, contactName, contactPhone }) => {
       const known = ["home", "work", "other"];
       const normalised = String(label ?? "other").toLowerCase();
       const resolvedLabel = known.includes(normalised) ? normalised : "other";
@@ -235,24 +260,45 @@ export function CustomerAuthProvider({ children }) {
       const resolvedCustomLabel =
         resolvedLabel === "other" ? (customLabel || (known.includes(normalised) ? "" : label) || "") : "";
 
+      // The address being saved is the one being entered — fall back to the location the
+      // customer set up only for the fields the form didn't collect, never past that.
+      const resolvedCoords = coords ?? deliveryLocation?.coords ?? null;
+
       return addAddressMutation.mutateAsync({
         label: resolvedLabel,
         ...(resolvedCustomLabel ? { customLabel: resolvedCustomLabel } : {}),
         street: line,
-        city: city || deliveryLocation?.city || "Bangalore",
-        state: state || "Karnataka",
-        pincode: pincode || "560001",
-        location: {
-          type: "Point",
-          coordinates: [
-            coords?.longitude ?? deliveryLocation?.coords?.longitude ?? 77.5946,
-            coords?.latitude ?? deliveryLocation?.coords?.latitude ?? 12.9716,
-          ],
-        },
+        ...optionalField("city", city || deliveryLocation?.city),
+        ...optionalField("state", state || deliveryLocation?.state),
+        ...optionalField("pincode", pincode || deliveryLocation?.pincode),
+        ...optionalField("contactName", contactName),
+        ...optionalField("contactPhone", contactPhone),
+        ...(resolvedCoords
+          ? {
+              location: {
+                type: "Point",
+                coordinates: [resolvedCoords.longitude, resolvedCoords.latitude],
+              },
+            }
+          : {}),
         isDefault: false,
       });
     },
     [addAddressMutation, deliveryLocation],
+  );
+
+  // The account's own name, which nothing in the app ever set — so every order reached
+  // the restaurant, and every offer reached the delivery partner, with a blank customer.
+  // Captured right after OTP for a new account (screens/auth/ProfileSetup.jsx) and
+  // editable afterwards from the profile.
+  const updateProfile = useCallback(
+    async (updates) => {
+      const { user: updated } = await client.patch("/users/me", updates);
+      if (updated) setUser(updated);
+      queryClient.invalidateQueries({ queryKey: ["profile"] });
+      return updated;
+    },
+    [queryClient],
   );
 
   // The server validates `^\d{10}$` — strip anything the field let through
@@ -335,6 +381,7 @@ export function CustomerAuthProvider({ children }) {
       selectAddress,
       addAddress,
       deleteAddress,
+      updateProfile,
       requestOtp,
       verifyOtp,
       logout,
@@ -357,6 +404,7 @@ export function CustomerAuthProvider({ children }) {
       selectAddress,
       addAddress,
       deleteAddress,
+      updateProfile,
       requestOtp,
       verifyOtp,
       logout,

@@ -136,7 +136,7 @@ export default function Cart({ route, navigation }) {
 
   // The cart lives server-side, so it isn't known on the first frame. Without
   // this the screen claims to be empty for a moment before the real order lands.
-  if (cartLoading) {
+  if (cartLoading && !cart) {
     return (
       <Screen edges={["top", "bottom"]}>
         {header}
@@ -183,16 +183,6 @@ export default function Cart({ route, navigation }) {
   // checkout summary — the cart's own `GET /cart` bill doesn't carry the tip or
   // the upsell rail, and re-deriving them client-side is how the cart's total
   // and the pay button's total end up disagreeing.
-  if (isLoadingSummary) {
-    return (
-      <Screen edges={["top"]}>
-        {header}
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={accent.icon} />
-        </View>
-      </Screen>
-    );
-  }
 
   const bill = summary?.bill
     ? {
@@ -420,7 +410,7 @@ export default function Cart({ route, navigation }) {
 
         <Pressable
           onPress={() => setSheet("address")}
-          className="mx-4 mt-3 flex-row items-center gap-2.5 rounded-2xl bg-card p-3.5 shadow-sm shadow-black/5"
+          className="mx-4 mt-3 flex-row items-center gap-2.5 rounded-2xl bg-card p-3.5"
           accessibilityRole="button"
           accessibilityLabel={
             deliveryAddress ? `Delivering to ${deliveryAddress.label}. Change address` : "Add a delivery address"
@@ -459,7 +449,7 @@ export default function Cart({ route, navigation }) {
           {cart.restaurantName}
         </Text>
 
-        <Card className="mx-4 mt-2.5 px-4 py-1 shadow-sm shadow-black/5">
+        <Card className="mx-4 mt-2.5 px-4 py-1">
           {cart.lines.map((line, index) => (
             <View key={line.key}>
               {index ? <View className="h-px bg-border" /> : null}
@@ -508,7 +498,7 @@ export default function Cart({ route, navigation }) {
             the option is offered where it means something rather than on every
             cart as a request the kitchen would contradict. */}
         {summary?.vegFleetEligible ? (
-          <Card className="mx-4 mt-4 p-3.5 shadow-sm shadow-black/5">
+          <Card className="mx-4 mt-4 p-3.5">
             <Pressable
               onPress={() => setVegFleet((current) => !current)}
               className="flex-row items-center gap-2.5"
@@ -571,14 +561,20 @@ export default function Cart({ route, navigation }) {
           </View>
         ) : null}
 
-        <BillDetails
-          bill={bill}
-          accent={accent}
-          title="Bill Details"
-          totalLabel="To Pay"
-          className="mx-4 mt-5"
-          onAddTip={() => setSheet("tip")}
-        />
+        {isLoadingSummary && !bill ? (
+          <View className="mx-4 mt-5 h-[160px] items-center justify-center rounded-[20px] bg-card border border-black/[0.06]">
+            <ActivityIndicator color={accent.icon} />
+          </View>
+        ) : (
+          <BillDetails
+            bill={bill}
+            accent={accent}
+            title="Bill Details"
+            totalLabel="To Pay"
+            className="mx-4 mt-5"
+            onAddTip={() => setSheet("tip")}
+          />
+        )}
 
         <Text className="mt-4 px-8 text-center font-jakarta text-[12px] leading-[18px] text-muted-foreground">
           Cancellation policy: Please double-check your order and address details. Orders are
@@ -681,17 +677,19 @@ export default function Cart({ route, navigation }) {
           // say so here than to let the pay button fail. Two taps landing together
           // could otherwise both read the same cart and create two real orders
           // (Gotcha #7) — disabled on the first tap, not just styled as busy.
-          disabled={!deliveryAddress || isPaying}
-          style={deliveryAddress ? { backgroundColor: accent.icon } : undefined}
+          disabled={!deliveryAddress || isPaying || isLoadingSummary}
+          style={deliveryAddress && !isLoadingSummary ? { backgroundColor: accent.icon } : undefined}
           className="mt-3 w-full shadow-lg shadow-black/20"
           accessibilityLabel={
-            deliveryAddress
-              ? `Pay ${formatPrice(bill?.toPay || 0)}`
-              : "Add a delivery address first"
+            !deliveryAddress
+              ? "Add a delivery address first"
+              : isLoadingSummary
+                ? "Loading summary…"
+                : `Pay ${formatPrice(bill?.toPay || 0)}`
           }
         >
           <Text className="font-jakarta-bold text-[17px] leading-[24px] text-white">
-            {isPaying ? "Placing order…" : `Pay ${formatPrice(bill?.toPay || 0)}`}
+            {isPaying ? "Placing order…" : isLoadingSummary ? "Loading…" : `Pay ${formatPrice(bill?.toPay || 0)}`}
           </Text>
         </Button>
       </View>

@@ -5,6 +5,10 @@ import Svg, { Path } from "react-native-svg";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
+import { VEG_SCOPES } from "@/lib/vegMode";
+
+// Re-exported so the screens that already import the enum from here keep working.
+export { VEG_SCOPES };
 
 // Figma "07 · Home — veg mode popover". A card anchored under the VEG Only tile
 // in the search bar, right edges aligned. The radio choice is a draft until
@@ -12,15 +16,6 @@ import { cn } from "@/lib/utils";
 const CARD_WIDTH = 250;
 const ANCHOR_GAP = 8;
 const SCREEN_EDGE = 12;
-
-// These are the values the API stores and filters on, not display slugs — the
-// preferences endpoint validates against this exact enum, and the home feed only
-// narrows to pure-veg storefronts when it sees `pure_veg_only`. Anything else is
-// rejected on save and silently ignored on the feed.
-export const VEG_SCOPES = {
-  ALL: "all_restaurants",
-  PURE_VEG: "pure_veg_only",
-};
 
 const OPTIONS = [
   { value: VEG_SCOPES.ALL, label: "All restaurants" },

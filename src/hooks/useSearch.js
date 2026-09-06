@@ -2,25 +2,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import client from "@/api/client";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
+import { coordsFrom } from "@/lib/coords";
 
-// Bangalore city centre — only ever reached when the customer hasn't set a
-// delivery location yet, which the geo endpoints require regardless.
-const FALLBACK_COORDS = { lat: 12.9716, lng: 77.5946 };
-
-// Location setup stores `{ label, coords }` from expo-location; a saved address
-// stores GeoJSON `[lng, lat]`. Both reach here, so both are read.
-export function coordsFrom(deliveryLocation) {
-  return {
-    lat:
-      deliveryLocation?.coords?.latitude ??
-      deliveryLocation?.location?.coordinates?.[1] ??
-      FALLBACK_COORDS.lat,
-    lng:
-      deliveryLocation?.coords?.longitude ??
-      deliveryLocation?.location?.coordinates?.[0] ??
-      FALLBACK_COORDS.lng,
-  };
-}
+// Moved to lib/coords.js so the launch bootstrap can build the home-feed query key
+// without pulling this module (and the auth context it reads) in behind it.
+export { coordsFrom };
 
 export function useRecentSearches() {
   const { isAuthenticated, sessionReady } = useCustomerAuth();

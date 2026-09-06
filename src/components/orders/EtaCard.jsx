@@ -11,10 +11,10 @@ export default function EtaCard({ order, vegOnly, className }) {
   const { restaurant } = order;
 
   return (
-    <Card className={`p-4 shadow-xl shadow-black/5 rounded-3xl ${className || ""}`}>
+    <Card className={`p-4 rounded-3xl ${className || ""}`}>
       <View className="flex-row items-center justify-between">
         <View className="flex-row items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1 border border-blue-100/50">
-          <View className="size-2 rounded-full bg-blue-600 shadow-sm" />
+          <View className="size-2 rounded-full bg-blue-600" />
           <Text className="font-jakarta-bold text-[10px] tracking-widest text-blue-700">
             ON THE WAY
           </Text>
@@ -51,7 +51,7 @@ export default function EtaCard({ order, vegOnly, className }) {
       <View className="mt-5 flex-row items-center gap-3.5 border-t border-border/60 pt-4">
         <View
           style={{ backgroundColor: GLYPH_TILE }}
-          className="size-11 items-center justify-center rounded-2xl shadow-sm"
+          className="size-11 items-center justify-center rounded-2xl"
         >
           <Store size={22} color={vegOnly ? "#2E7D32" : "#E8480C"} strokeWidth={2.5} />
         </View>

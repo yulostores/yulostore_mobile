@@ -60,7 +60,7 @@ export default function FeatureFlags() {
 // often — "it works on my machine" is usually one of these two differing.
 function RuntimeCard() {
   return (
-    <View className="mx-5 mt-6 gap-2 rounded-[20px] bg-card p-5 shadow-md shadow-black/10">
+    <View className="mx-5 mt-6 gap-2 rounded-[20px] bg-card p-5 border border-black/[0.06]">
       <Field label="Runtime" value={RUNTIME_LABEL} />
       <Field label="Platform" value={`${Platform.OS} ${Platform.Version ?? ""}`.trim()} />
       <Field label="API base" value={API_BASE} />
@@ -94,7 +94,7 @@ function FlagRow({ state, onToggle, onReset }) {
   const locked = state.locked;
 
   return (
-    <View className="w-full gap-2 rounded-[20px] bg-card px-5 py-4 shadow-md shadow-black/10">
+    <View className="w-full gap-2 rounded-[20px] bg-card px-5 py-4 border border-black/[0.06]">
       <View className="flex-row items-center gap-3">
         <View className="flex-1">
           <Text className="font-jakarta-semibold text-[16px] leading-[22px] text-foreground">
