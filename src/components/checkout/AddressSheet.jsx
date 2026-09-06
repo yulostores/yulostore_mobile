@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { Alert, Pressable, View } from "react-native";
 import { Plus, X } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import BottomSheet from "@/components/ui/BottomSheet";
 import PressableScale from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
 import AddressCard from "@/components/checkout/AddressCard";
 import AddressForm from "@/components/checkout/AddressForm";
-import { ACCENTS } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { PRESS_SCALE } from "@/lib/motion";
 
 // The cart's "Delivering to" row opens this instead of its own screen — picking
@@ -23,7 +24,7 @@ export default function AddressSheet({
   visible,
   addresses,
   selectedAddress,
-  accent = ACCENTS.default,
+  accent = ACCENT,
   onSelect,
   onAdd,
   onDismiss,
@@ -80,7 +81,7 @@ export default function AddressSheet({
               accessibilityRole="button"
               accessibilityLabel="Close"
             >
-              <X size={24} color="#1A1A1A" />
+              <X size={24} color={colors.foreground} />
             </PressableScale>
           </View>
 
@@ -90,7 +91,7 @@ export default function AddressSheet({
             accessibilityRole="button"
             accessibilityLabel="Add a new address"
           >
-            <Plus size={20} color="#666666" />
+            <Plus size={20} color={colors.muted.foreground} />
             <Text style={{ color: accent.icon }} className="font-jakarta-semibold text-[16px] leading-[22px]">
               Add a new address
             </Text>

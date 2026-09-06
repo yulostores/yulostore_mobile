@@ -32,7 +32,16 @@ export const queryClient = new QueryClient({
       // door closed should go again once there's signal.
       retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
       staleTime: 5 * 60 * 1000,
-      refetchOnWindowFocus: true,
+      // Off by default, and deliberately so. Every tab screen stays mounted
+      // (CustomerTabs keeps all four alive), so a global `true` here meant that
+      // coming back from the home screen fired the feed, the cart, the orders
+      // list, the profile, the checkout summary and any live tracking query at
+      // once — six or more requests landing on the exact frame the customer is
+      // trying to touch something. The 5-minute staleTime above already covers
+      // everything that isn't time-critical; the two queries that genuinely go
+      // stale while the phone is in a pocket — the home feed and the orders list
+      // behind `useActiveOrder` — opt in individually.
+      refetchOnWindowFocus: false,
       refetchOnReconnect: true,
     },
     mutations: {

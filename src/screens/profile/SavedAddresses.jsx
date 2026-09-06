@@ -3,13 +3,12 @@ import { Alert, Pressable, ScrollView, View } from "react-native";
 import { Plus } from "lucide-react-native";
 
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
-import { useFeed } from "@/context/FeedContext";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
 import AddressCard from "@/components/checkout/AddressCard";
 import AddressFormSheet from "@/components/checkout/AddressFormSheet";
 import PageHeader from "@/components/customer/PageHeader";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 
 const SCROLL_PADDING = 32;
 
@@ -25,8 +24,6 @@ const SCROLL_PADDING = 32;
 export default function SavedAddresses() {
   const { addresses, selectedAddress, selectAddress, addAddress, deleteAddress } =
     useCustomerAuth();
-  const { vegOnly } = useFeed();
-  const accent = accentFor(vegOnly);
 
   const [adding, setAdding] = useState(false);
 
@@ -64,14 +61,14 @@ export default function SavedAddresses() {
 
         <Pressable
           onPress={() => setAdding(true)}
-          style={{ backgroundColor: accent.tint }}
+          style={{ backgroundColor: ACCENT.tint }}
           className="mx-5 mt-5 h-12 flex-row items-center gap-2.5 rounded-2xl px-4"
           accessibilityRole="button"
           accessibilityLabel="Add a new address"
         >
-          <Plus size={19} color={accent.icon} strokeWidth={2.4} />
+          <Plus size={19} color={ACCENT.icon} strokeWidth={2.4} />
 
-          <Text style={{ color: accent.icon }} className="font-jakarta-semibold text-[15px] leading-[21px]">
+          <Text style={{ color: ACCENT.icon }} className="font-jakarta-semibold text-[15px] leading-[21px]">
             Add a new address
           </Text>
         </Pressable>
@@ -82,7 +79,7 @@ export default function SavedAddresses() {
               <AddressCard
                 key={address.id}
                 address={address}
-                accent={accent}
+                accent={ACCENT}
                 selected={address.id === selectedAddress?.id}
                 onPress={() =>
                   selectAddress(address.id).catch((error) =>
@@ -102,7 +99,7 @@ export default function SavedAddresses() {
 
       <AddressFormSheet
         visible={adding}
-        accent={accent}
+        accent={ACCENT}
         onSave={saveAddress}
         onDismiss={() => setAdding(false)}
       />

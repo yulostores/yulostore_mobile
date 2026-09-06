@@ -1,6 +1,7 @@
 import { Pressable, View } from "react-native";
 import { MapPin, Trash2 } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
 
@@ -42,7 +43,7 @@ export default function AddressCard({ address, selected, accent, onPress, onDele
           accessibilityRole="button"
           accessibilityLabel="Delete address"
         >
-          <Trash2 size={17} color="#999999" />
+          <Trash2 size={17} color={colors.muted.placeholder} />
         </Pressable>
       )}
     </Pressable>

@@ -2,17 +2,25 @@ import { useEffect, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, TextInput, View } from "react-native";
 import { MapPin, Search } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import { fetchDeviceLocation } from "@/lib/location";
+import { useNavigation } from "@react-navigation/native";
+
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
-import { useFeature } from "@/context/FeatureFlagsContext";
-import { explainFeature } from "@/lib/features";
+import { explainFeature, feature } from "@/lib/features";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
 import Button from "@/components/ui/Button";
 import BackButton from "@/components/customer/BackButton";
 
-export default function LocationSetup({ onNext }) {
+export default function LocationSetup() {
+  const navigation = useNavigation();
   const { deliveryLocation, setDeliveryLocation, addresses, addAddress } = useCustomerAuth();
+
+  // Reachable both before the feed (first-time setup) and from it (the address
+  // chip), so it resets rather than pushes: there is nothing behind an address
+  // that has just been set worth walking back into.
+  const done = () => navigation.reset({ index: 0, routes: [{ name: "Tabs" }] });
   const inputRef = useRef(null);
   // Reopening this screen to change an existing address should show that
   // address as editable text, not a blank field the GPS lookup is about to
@@ -24,7 +32,7 @@ export default function LocationSetup({ onNext }) {
   // GPS button is a shortcut, not a requirement. So when the module is gone or
   // switched off, the button goes and the field stays, rather than the screen
   // becoming a dead end.
-  const locationFeature = useFeature("deviceLocation");
+  const locationFeature = feature("deviceLocation");
   const canUseGps = !!locationFeature.enabled;
 
   // Once there's an address in the field, that's what the customer is trying to
@@ -85,7 +93,7 @@ export default function LocationSetup({ onNext }) {
       // whatever the lookup has by then is what gets saved.
       const location = await fetchDeviceLocation({ preciseTimeoutMs: 15000 });
       await persistLocation(location);
-      onNext();
+      done();
     } catch (err) {
       setError(
         err?.message === "permission-denied"
@@ -118,7 +126,7 @@ export default function LocationSetup({ onNext }) {
     setLocating(true);
     try {
       await persistLocation({ label: query.trim(), coords: null });
-      onNext();
+      done();
     } finally {
       setLocating(false);
     }
@@ -138,7 +146,7 @@ export default function LocationSetup({ onNext }) {
           <View className="absolute left-4 top-4">
             <BackButton className="size-10 items-center justify-center rounded-full bg-white" />
           </View>
-          <MapPin size={40} color="#FF5E00" />
+          <MapPin size={40} color={colors.primary.DEFAULT} />
         </View>
 
         <View className="flex-1 px-6 pt-6">
@@ -151,7 +159,7 @@ export default function LocationSetup({ onNext }) {
           </Text>
 
           <View className="mt-6 h-12 w-full flex-row items-center gap-2 rounded-full border border-border bg-white px-4">
-            <Search size={18} color="#999999" />
+            <Search size={18} color={colors.muted.placeholder} />
             <TextInput
               ref={inputRef}
               value={query}
@@ -161,7 +169,7 @@ export default function LocationSetup({ onNext }) {
               }}
               onSubmitEditing={handleManualSubmit}
               placeholder="Enter your flat, area, or landmark"
-              placeholderTextColor="#999999"
+              placeholderTextColor={colors.muted.placeholder}
               returnKeyType="search"
               className="flex-1 font-jakarta text-[15px] text-foreground"
               accessibilityLabel="Delivery address"

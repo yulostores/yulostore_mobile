@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import client from "@/api/client";
+import client, { CHECKOUT_TIMEOUT } from "@/api/client";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 
 // RFC-4122 v4, built from Math.random rather than a crypto polyfill — this only
@@ -38,6 +38,10 @@ export function usePlaceOrder() {
         // original order instead of creating a second one. Not airtight on its
         // own (Gotcha #7) — the pay button is also disabled on first tap.
         headers: { "Idempotency-Key": uuidV4() },
+        // Reads time out at 10s; this one doesn't. Abandoning a checkout the
+        // server is halfway through committing leaves the customer unable to tell
+        // whether they've ordered — the one place a long wait beats a fast error.
+        timeout: CHECKOUT_TIMEOUT,
       }),
     onSuccess: () => {
       // The server empties the cart as part of placing the order.
@@ -65,7 +69,8 @@ export function useSimulatePayment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (orderId) => client.post(`/orders/${orderId}/payment/simulate`),
+    mutationFn: (orderId) =>
+      client.post(`/orders/${orderId}/payment/simulate`, null, { timeout: CHECKOUT_TIMEOUT }),
     onSuccess: (_, orderId) => {
       queryClient.invalidateQueries({ queryKey: ["order", orderId] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });
@@ -81,7 +86,7 @@ export function useVerifyPayment() {
 
   return useMutation({
     mutationFn: ({ orderId, ...signature }) =>
-      client.post(`/orders/${orderId}/payment/verify`, signature),
+      client.post(`/orders/${orderId}/payment/verify`, signature, { timeout: CHECKOUT_TIMEOUT }),
     onSuccess: (_, { orderId }) => {
       queryClient.invalidateQueries({ queryKey: ["order", orderId] });
       queryClient.invalidateQueries({ queryKey: ["orders"] });

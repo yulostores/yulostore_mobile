@@ -4,6 +4,10 @@ import { ChevronRight } from "lucide-react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import Animated, { FadeInDown, FadeIn, ZoomIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing } from "react-native-reanimated";
 
+import { useNavigation } from "@react-navigation/native";
+
+import { colors } from "@/lib/tokens";
+import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
 import OnboardingProgress from "@/components/onboarding/OnboardingProgress";
@@ -49,7 +53,7 @@ function BlobDecoration({ scale }) {
         <LinearGradient id="onboardingBlobStep3" x1="258.106" y1="129.385" x2="129.927" y2="-20.7465" gradientUnits="userSpaceOnUse">
           <Stop offset="0" stopColor="#A4161A" />
           <Stop offset="0.35" stopColor="#B11226" />
-          <Stop offset="0.7" stopColor="#D9480F" />
+          <Stop offset="0.7" stopColor={colors.primary.ribbon} />
           <Stop offset="1" stopColor="#F2A65A" />
         </LinearGradient>
       </Defs>
@@ -62,8 +66,18 @@ function BlobDecoration({ scale }) {
   );
 }
 
-export default function OnboardingStep3({ onNext }) {
+export default function OnboardingStep3() {
+  const navigation = useNavigation();
+  const { completeOnboarding } = useCustomerAuth();
   const { width } = useWindowDimensions();
+
+  // The last step is also where onboarding is marked done — a reset rather than
+  // a push, so the three steps aren't sitting behind the login screen waiting to
+  // be walked back into.
+  const finish = () => {
+    completeOnboarding();
+    navigation.reset({ index: 0, routes: [{ name: "Login" }] });
+  };
   const scale = width / FRAME_WIDTH;
   const illustrationWidth = width * 0.82;
 
@@ -94,7 +108,7 @@ export default function OnboardingStep3({ onNext }) {
 
       <Animated.View entering={FadeIn.delay(450)} className="items-center gap-6 pb-12">
         <Pressable
-          onPress={onNext}
+          onPress={finish}
           hitSlop={8}
           className="flex-row items-center gap-1 py-2"
           style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] }]}

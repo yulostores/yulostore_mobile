@@ -1,6 +1,7 @@
 import { View } from "react-native";
 import { Star, Store } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import Card from "@/components/ui/Card";
 import Text from "@/components/ui/Text";
 import { cuisineFor } from "@/data/orders";
@@ -53,7 +54,7 @@ export default function EtaCard({ order, vegOnly, className }) {
           style={{ backgroundColor: GLYPH_TILE }}
           className="size-11 items-center justify-center rounded-2xl"
         >
-          <Store size={22} color={vegOnly ? "#2E7D32" : "#E8480C"} strokeWidth={2.5} />
+          <Store size={22} color={colors.primary.ribbon} strokeWidth={2.5} />
         </View>
 
         <View className="flex-1 justify-center">
@@ -71,8 +72,8 @@ export default function EtaCard({ order, vegOnly, className }) {
               </Text>
               <Star
                 size={10}
-                color={vegOnly ? "#1A1A1A" : "#D97706"}
-                fill={vegOnly ? "#1A1A1A" : "#D97706"}
+                color={colors.warning.DEFAULT}
+                fill={colors.warning.DEFAULT}
               />
             </View>
             <Text className="font-jakarta-medium text-[13px] text-muted-foreground">

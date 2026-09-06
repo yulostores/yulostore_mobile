@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 
 import { Blur } from "@/lib/nativeModules";
-import { useFeatureEnabled } from "@/context/FeatureFlagsContext";
+import { isFeatureEnabled } from "@/lib/features";
 import { cn } from "@/lib/utils";
 
 // The frosted fill behind the floating bars (sticky cart, active order). Both
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 // card layer goes nearly opaque instead. Legibility is the requirement; the
 // blur was only ever one way of meeting it.
 export default function BlurBackdrop({ intensity = 100, tint = "light", className }) {
-  const blurEnabled = useFeatureEnabled("blurEffects");
+  const blurEnabled = isFeatureEnabled("blurEffects");
   const BlurView = Blur?.BlurView;
 
   return (

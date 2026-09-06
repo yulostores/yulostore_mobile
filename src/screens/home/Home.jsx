@@ -1,20 +1,22 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FlatList, Image, RefreshControl, View } from "react-native";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
-import { useFeature, useFeatureEnabled } from "@/context/FeatureFlagsContext";
-import { useFeed } from "@/context/FeedContext";
+import { feature, isFeatureEnabled } from "@/lib/features";
+import { useVegMode } from "@/context/BrowsePreferencesContext";
+import { TAB_BAR_GAP, useTabBarSpace } from "@/components/customer/tabBarSpace";
+import { useCartState } from "@/context/CartContext";
+import { useFavourites } from "@/context/FavouritesContext";
 import { PRECISE_FIX_TIMEOUT_MS, fetchDeviceLocation } from "@/lib/location";
 import { useHomeFeed } from "@/hooks/useHomeFeed";
 import { useActiveOrder, useOrderSocket, useRestaurantNames } from "@/hooks/useOrders";
-import useResponsive from "@/hooks/useResponsive";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
 import ActiveOrderBar from "@/components/home/ActiveOrderBar";
 import DiscardCartDialog from "@/components/cart/DiscardCartDialog";
 import CategorySwitcher from "@/components/home/CategorySwitcher";
+import DishCardSmall from "@/components/home/DishCardSmall";
 import DishCategoryRow from "@/components/home/DishCategoryRow";
 import HomeFeedSkeleton from "@/components/home/HomeFeedSkeleton";
 import HomeHeader from "@/components/home/HomeHeader";
@@ -25,7 +27,8 @@ import SectionHeading from "@/components/home/SectionHeading";
 import StickyCartBar from "@/components/home/StickyCartBar";
 import VegModeBanner from "@/components/home/VegModeBanner";
 import VegModePopover from "@/components/home/VegModePopover";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
+import { colors } from "@/lib/tokens";
 import { LIST_PERF } from "@/lib/list";
 import { enter, enterRow } from "@/lib/motion";
 import { toRestaurantCard } from "@/lib/restaurant";
@@ -34,7 +37,6 @@ import { formatImageUrl } from "@/api/config";
 const goldBackdrop = require("@/assets/home/promo-gold-backdrop.jpg");
 const firstOrderBanner = require("@/assets/home/first-order-offer-banner.png");
 const cartRestaurant = require("@/assets/home/cart-restaurant-avatar.png");
-const dishBiryani = require("@/assets/home/dish-biryani.png");
 
 // Stand-in for a quick-filter chip the feed returned without an icon.
 const categoryBiryani = require("@/assets/home/category-biryani.png");
@@ -48,23 +50,25 @@ const BANNER_HEIGHT = 167;
 // failed, so those renders don't churn the list with a fresh empty array.
 const NO_ROWS = [];
 
-// `recommendedForYou` rows are dishes, not restaurants — its entries carry
-// `id: restaurantId`, so two recommended dishes from the same restaurant
-// collide on that key. `itemId` (the dish's own id) is unique per row;
-// `recommendedRestaurants` rows don't have one, so `id` covers those.
-const railKey = (item) => String(item.itemId ?? item.id);
+// Two recommended dishes can come from the same kitchen, so a dish rail is
+// keyed on the dish's own id rather than on the restaurant it belongs to.
+const dishKey = (dish) => String(dish.id);
 const restaurantKey = (item) => String(item.id);
 
 // Memoized so a heart toggled on one card, or the cart bar appearing, re-renders
 // that row alone instead of every card the rail is holding.
-const RailCard = memo(function RailCard({ restaurant, index, ratingTone, onSelect }) {
+const RailCard = memo(function RailCard({ restaurant, index, onSelect }) {
   return (
     <Animated.View entering={enterRow(FadeIn, index)}>
-      <RestaurantCardSmall
-        restaurant={restaurant}
-        ratingTone={ratingTone}
-        onPress={() => onSelect?.(restaurant)}
-      />
+      <RestaurantCardSmall restaurant={restaurant} onPress={() => onSelect?.(restaurant)} />
+    </Animated.View>
+  );
+});
+
+const DishRailCard = memo(function DishRailCard({ dish, index, onSelect }) {
+  return (
+    <Animated.View entering={enterRow(FadeIn, index)}>
+      <DishCardSmall dish={dish} onPress={() => onSelect?.(dish)} />
     </Animated.View>
   );
 });
@@ -73,14 +77,10 @@ const RailCard = memo(function RailCard({ restaurant, index, ratingTone, onSelec
 // they virtualize for the same reason the vertical list below them does: a rail
 // the customer never scrolls should cost the two or three cards they can see,
 // not the whole row the API returned.
-function RestaurantRow({ data, ratingTone, onSelect }) {
-  const { size, gutter } = useResponsive();
-
+function RestaurantRow({ data, onSelect }) {
   const renderItem = useCallback(
-    ({ item, index }) => (
-      <RailCard restaurant={item} index={index} ratingTone={ratingTone} onSelect={onSelect} />
-    ),
-    [ratingTone, onSelect],
+    ({ item, index }) => <RailCard restaurant={item} index={index} onSelect={onSelect} />,
+    [onSelect],
   );
 
   return (
@@ -88,9 +88,31 @@ function RestaurantRow({ data, ratingTone, onSelect }) {
       horizontal
       data={data}
       renderItem={renderItem}
-      keyExtractor={railKey}
+      keyExtractor={restaurantKey}
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: size(13), paddingHorizontal: gutter }}
+      contentContainerClassName="gap-[13px] px-6"
+      {...LIST_PERF}
+      initialNumToRender={4}
+    />
+  );
+}
+
+// The dish rail alongside it — same virtualization, a different card, because
+// the two rows describe different things.
+function DishRow({ data, onSelect }) {
+  const renderItem = useCallback(
+    ({ item, index }) => <DishRailCard dish={item} index={index} onSelect={onSelect} />,
+    [onSelect],
+  );
+
+  return (
+    <FlatList
+      horizontal
+      data={data}
+      renderItem={renderItem}
+      keyExtractor={dishKey}
+      showsHorizontalScrollIndicator={false}
+      contentContainerClassName="gap-[13px] px-6"
       {...LIST_PERF}
       initialNumToRender={4}
     />
@@ -104,8 +126,6 @@ const NearbyCard = memo(function NearbyCard({
   restaurant,
   index,
   favourite,
-  ratingTone,
-  gutter,
   onPress,
   onToggleFavourite,
 }) {
@@ -113,11 +133,10 @@ const NearbyCard = memo(function NearbyCard({
     // The nearby list is the one part of the feed a customer actually reads
     // down, so its cards rise in sequence — for the screenful that's there when
     // the feed lands. See `enterRow`.
-    <Animated.View style={{ paddingHorizontal: gutter }} entering={enterRow(FadeInDown, index)}>
+    <Animated.View className="px-6" entering={enterRow(FadeInDown, index)}>
       <RestaurantCardLarge
         restaurant={restaurant}
         favourite={favourite}
-        ratingTone={ratingTone}
         onToggleFavourite={() => onToggleFavourite(restaurant)}
         onPress={() => onPress(restaurant)}
       />
@@ -132,10 +151,11 @@ function NearbySeparator() {
 }
 
 export default function Home({ navigation }) {
-  const { gutter, size } = useResponsive();
-  const insets = useSafeAreaInsets();
+  // What the floating tab bar actually occupies, measured by the bar itself.
+  // It already carries the bottom safe-area inset, so nothing here reads insets.
+  const tabBarSpace = useTabBarSpace();
   const { deliveryLocation, setDeliveryLocation } = useCustomerAuth();
-  const locationFeature = useFeature("deviceLocation");
+  const locationFeature = feature("deviceLocation");
   const [locatingHeader, setLocatingHeader] = useState(false);
 
   // Read inside the lookup's callbacks, which outlive the render that started
@@ -209,20 +229,18 @@ export default function Home({ navigation }) {
   // The field here is a doorway — its mic hands off to the search screen, which
   // is where the recognizer actually runs. Both have to agree about whether the
   // mic is shown at all, or this one opens a screen with nothing to listen with.
-  const voiceSearchEnabled = useFeatureEnabled("voiceSearch");
+  const voiceSearchEnabled = isFeatureEnabled("voiceSearch");
   // Veg mode, the cart and the favourite hearts are shared with the search
   // screens, so they live in FeedContext rather than here — see its header.
-  const { cart, clearCart, isFavourite, toggleFavourite, vegOnly, vegScope, applyVegScope } =
-    useFeed();
+  const { cart, clearCart, cartBarDismissed, dismissCartBar } = useCartState();
+  const { isFavourite, toggleFavourite } = useFavourites();
+  const { vegOnly, vegScope, applyVegScope } = useVegMode();
 
   const [category, setCategory] = useState("food");
 
   // The restaurant the customer is trying to switch to while a cart is open —
   // set only while the discard prompt is up.
   const [pendingRestaurant, setPendingRestaurant] = useState(null);
-
-  // Hides the summary bar without throwing the order away.
-  const [cartBarDismissed, setCartBarDismissed] = useState(false);
 
   const [vegAnchor, setVegAnchor] = useState(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -249,6 +267,14 @@ export default function Home({ navigation }) {
       openMenu(restaurant);
     },
     [cart, openMenu],
+  );
+
+  // Tapping a dish opens the kitchen that makes it — named correctly, so the menu
+  // it pushes to isn't titled with the dish. The same single-cart rule applies as
+  // for any other way into a storefront.
+  const openDishRestaurant = useCallback(
+    (dish) => openRestaurant({ id: dish.restaurantId, name: dish.restaurantName }),
+    [openRestaurant],
   );
 
   const handleToggleFavourite = useCallback(
@@ -309,21 +335,43 @@ export default function Home({ navigation }) {
     [feedData, vegOnly],
   );
 
-  // `recommendedItems` are dishes, not storefronts — tapping one has to open the
-  // restaurant that serves it, which is what `restaurantId` is carried through for.
+  // `recommendedItems` are dishes, not storefronts. The kitchen that makes each
+  // one is part of what the card says, and the feed only carries a bare
+  // `restaurantId` on them — but they're drawn from the same nearby restaurants
+  // this feed already returned in full, so the names are resolved from that list
+  // rather than fetched again or left out.
+  const nearbyNamesById = useMemo(() => {
+    const names = new Map();
+    for (const restaurant of feedData?.nearbyRestaurants ?? []) {
+      names.set(String(restaurant._id ?? restaurant.id), restaurant.name);
+    }
+    return names;
+  }, [feedData]);
+
+  // `effectivePrice` is a Mongoose virtual, and the aggregation these come out
+  // of doesn't apply virtuals — so the underlying price fields are what's
+  // actually on the wire for most of these rows, with the virtual honoured where
+  // it does come through (veg mode substitutes are fetched, not aggregated).
   const recommendedForYou = useMemo(
     () =>
-      (feedData?.recommendedItems ?? []).map((item) => ({
-        id: item.restaurantId,
-        itemId: item._id,
-        name: item.name,
-        image: item.image ? { uri: formatImageUrl(item.image) } : dishBiryani,
-        fallbackImage: dishBiryani,
-        offer: item.effectivePrice != null ? `₹${item.effectivePrice}` : null,
-        veg: item.foodType === "veg",
-        rating: "New",
-      })),
-    [feedData],
+      (feedData?.recommendedItems ?? []).map((item) => {
+        const price = item.effectivePrice ?? item.discountedPrice ?? item.sellingPrice ?? 0;
+
+        return {
+          id: item._id,
+          restaurantId: item.restaurantId,
+          restaurantName: nearbyNamesById.get(String(item.restaurantId)) ?? null,
+          name: item.name,
+          // No stand-in bitmap: RemoteImage draws its tinted tile for a dish
+          // whose photo hasn't been shot yet.
+          image: item.image ? { uri: formatImageUrl(item.image) } : null,
+          price,
+          // Only a real markdown gets a struck-through price beside it.
+          mrp: item.sellingPrice > price ? item.sellingPrice : null,
+          veg: item.foodType === "veg",
+        };
+      }),
+    [feedData, nearbyNamesById],
   );
 
   const recommendedRestaurants = useMemo(
@@ -343,7 +391,6 @@ export default function Home({ navigation }) {
     [feedData],
   );
 
-  const ratingTone = vegOnly ? "veg" : "default";
 
   // Loading and failure states belong to the feed as a whole, not to the nearby
   // list, so they're drawn in the header and the list is handed nothing to
@@ -356,13 +403,11 @@ export default function Home({ navigation }) {
         restaurant={item}
         index={index}
         favourite={isFavourite(item.id, item.isFavorited)}
-        ratingTone={ratingTone}
-        gutter={gutter}
         onPress={openRestaurant}
         onToggleFavourite={handleToggleFavourite}
       />
     ),
-    [isFavourite, ratingTone, gutter, openRestaurant, handleToggleFavourite],
+    [isFavourite, openRestaurant, handleToggleFavourite],
   );
 
   // Everything above "Restaurants near you" scrolls with the list rather than
@@ -383,11 +428,11 @@ export default function Home({ navigation }) {
           onPressProfile={() => navigation?.navigate("Profile")}
         />
 
-        <View style={{ paddingHorizontal: gutter }} className="mt-3">
-          <CategorySwitcher value={category} onChange={setCategory} vegOnly={vegOnly} />
+        <View className="mt-3 px-6">
+          <CategorySwitcher value={category} onChange={setCategory} />
         </View>
 
-        <View style={{ paddingHorizontal: gutter }} className="mt-3">
+        <View className="mt-3 px-6">
           <HomeSearchBar
             showVoice={voiceSearchEnabled}
             vegOnly={vegOnly}
@@ -407,8 +452,7 @@ export default function Home({ navigation }) {
       {vegOnly ? (
         <Animated.View
           entering={enter(FadeInDown)}
-          style={{ paddingHorizontal: gutter }}
-          className="mt-4"
+          className="mt-4 px-6"
         >
           <VegModeBanner />
         </Animated.View>
@@ -432,7 +476,7 @@ export default function Home({ navigation }) {
         <>
           {dishCategories.length > 0 && (
             <>
-              <SectionHeading className="ml-5 mt-9">What’s on your mind?</SectionHeading>
+              <SectionHeading className="mt-9 px-6">What’s on your mind?</SectionHeading>
               <View className="mt-1.5">
                 <DishCategoryRow
                   items={dishCategories}
@@ -444,40 +488,35 @@ export default function Home({ navigation }) {
 
           {recommendedForYou.length > 0 && (
             <>
-              <SectionHeading className="ml-5 mt-8">Recommended for you</SectionHeading>
+              <SectionHeading className="mt-8 px-6">Recommended for you</SectionHeading>
               <View className="mt-2">
-                <RestaurantRow
-                  data={recommendedForYou}
-                  ratingTone={ratingTone}
-                  onSelect={openRestaurant}
-                />
+                <DishRow data={recommendedForYou} onSelect={openDishRestaurant} />
               </View>
             </>
           )}
 
           {recommendedRestaurants.length > 0 && (
             <>
-              <SectionHeading className="ml-5 mt-6">Recommended restaurants</SectionHeading>
+              <SectionHeading className="mt-6 px-6">Recommended restaurants</SectionHeading>
               <View className="mt-2">
                 <RestaurantRow
                   data={recommendedRestaurants}
-                  ratingTone={ratingTone}
                   onSelect={openRestaurant}
                 />
               </View>
             </>
           )}
 
-          <SectionHeading className="ml-[31px] mt-6">Restaurants near you</SectionHeading>
+          <SectionHeading className="mt-6 px-6">Restaurants near you</SectionHeading>
           <View className="h-1.5" />
         </>
       )}
     </>
   );
 
-  // No bottom edge — this is a tab screen now, and the tab bar below it
-  // already carries the bottom safe-area inset. Padding for it again here
-  // would just leave a gap of dead space above the bar.
+  // No bottom edge — this is a tab screen, and the space the bar takes is
+  // reserved in the list's own content padding below instead, which is the only
+  // way the last restaurant card can scroll clear of a bar that floats over it.
   return (
     <Screen edges={["top"]}>
       <FlatList
@@ -488,21 +527,18 @@ export default function Home({ navigation }) {
         ListHeaderComponent={listHeader}
         ListEmptyComponent={
           feedReady ? (
-            <Text
-              style={{ paddingHorizontal: gutter }}
-              className="mt-1.5 font-jakarta text-[14px] leading-[20px] text-muted-foreground"
-            >
+            <Text className="mt-1.5 px-6 font-jakarta text-[14px] leading-[20px] text-muted-foreground">
               No restaurants deliver to this address yet. Try another location.
             </Text>
           ) : null
         }
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: tabBarSpace + TAB_BAR_GAP }}
         // A feed of nearby restaurants goes stale as the customer moves — pulling
         // to refresh is the gesture they'll reach for, on a screen that otherwise
         // has no way to ask for fresh data.
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#FF5E00" />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary.DEFAULT} />
         }
         {...LIST_PERF}
         // A 180pt photo plus its meta rows is about half a phone screen, so four
@@ -515,8 +551,9 @@ export default function Home({ navigation }) {
         anchor={vegAnchor}
         value={vegScope}
         onApply={handleApplyVegScope}
-        // No dietary-preferences screen exists yet, so this just closes for now.
-        onMoreSettings={() => setPopoverOpen(false)}
+        // No `onMoreSettings`: there is no dietary-preferences screen to open
+        // yet, so the popover leaves the link out instead of showing one that
+        // only closes it.
         onDismiss={() => setPopoverOpen(false)}
       />
 
@@ -535,25 +572,24 @@ export default function Home({ navigation }) {
           flight wins the slot, since it's the thing already committed and
           time-sensitive; the cart bar reappears here the moment that order
           drops off `useActiveOrder`. */}
-      <View className="absolute inset-x-0" style={{ bottom: Math.max(insets.bottom, size(16)) + size(90) }}>
+      <View className="absolute inset-x-0" style={{ bottom: tabBarSpace + TAB_BAR_GAP }}>
         {activeOrder ? (
           <ActiveOrderBar
-            style={{ marginHorizontal: size(16) }}
+            className="mx-4"
             restaurantName={activeOrderRestaurantName}
             status={activeOrder.status}
-            accent={accentFor(vegOnly)}
+            accent={ACCENT}
             onPress={() => navigation?.navigate("Tracking", { orderId: activeOrder._id })}
           />
         ) : cart && !cartBarDismissed ? (
           <StickyCartBar
-            style={{ marginHorizontal: size(16) }}
+            className="mx-4"
             restaurantName={cart.restaurantName}
             restaurantImage={cartRestaurant}
             itemCount={cart.itemCount}
-            vegOnly={vegOnly}
             onViewMenu={() => openMenu({ id: cart.restaurantId, name: cart.restaurantName })}
             onViewCart={() => navigation?.navigate("Cart")}
-            onDismiss={() => setCartBarDismissed(true)}
+            onDismiss={dismissCartBar}
           />
         ) : null}
       </View>

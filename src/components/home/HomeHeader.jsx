@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { ChevronDown, MapPin, User } from "lucide-react-native";
 
-import useResponsive from "@/hooks/useResponsive";
+import { colors } from "@/lib/tokens";
 import PressableScale from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
 import { PRESS_SCALE } from "@/lib/motion";
@@ -10,13 +10,8 @@ import { PRESS_SCALE } from "@/lib/motion";
 // back-and-title bar, so home — which has nothing to go back to — gets its own
 // address + profile header instead.
 export default function HomeHeader({ address, onPressAddress, onPressProfile }) {
-  const { gutter } = useResponsive();
-
   return (
-    <View
-      style={{ paddingHorizontal: gutter }}
-      className="h-[72px] w-full flex-row items-center justify-between"
-    >
+    <View className="h-[72px] w-full flex-row items-center justify-between px-6">
       <PressableScale
         onPress={onPressAddress}
         hitSlop={8}
@@ -25,7 +20,7 @@ export default function HomeHeader({ address, onPressAddress, onPressProfile }) 
         accessibilityRole="button"
         accessibilityLabel="Change delivery address"
       >
-        <MapPin size={20} color="#FF5E00" />
+        <MapPin size={20} color={colors.primary.DEFAULT} />
 
         <View className="flex-1">
           <Text className="font-jakarta-semibold text-[18px] leading-[25px] text-muted-foreground">
@@ -43,7 +38,7 @@ export default function HomeHeader({ address, onPressAddress, onPressProfile }) 
             >
               {address}
             </Text>
-            <ChevronDown size={12} color="#1A1A1A" />
+            <ChevronDown size={12} color={colors.foreground} />
           </View>
         </View>
       </PressableScale>
@@ -56,7 +51,7 @@ export default function HomeHeader({ address, onPressAddress, onPressProfile }) 
         accessibilityRole="button"
         accessibilityLabel="Profile"
       >
-        <User size={22} color="#F0592A" />
+        <User size={22} color={colors.primary.hover} />
       </PressableScale>
     </View>
   );

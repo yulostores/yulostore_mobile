@@ -1,204 +1,38 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useQueryClient } from "@tanstack/react-query";
+import { BrowsePreferencesProvider } from "./BrowsePreferencesContext";
+import { CartProvider } from "./CartContext";
+import { FavouritesProvider } from "./FavouritesContext";
 
-import { getStorageSnapshot, whenStorageReady } from "@/api/launch";
-import { useCart } from "@/hooks/useCart";
-import { useToggleFavorite, useUpdatePreferences } from "@/hooks/useUser";
-import { FEED_KEY } from "@/lib/storageKeys";
-import { DEFAULT_VEG_SCOPE } from "@/lib/vegMode";
-import { useCustomerAuth } from "./CustomerAuthContext";
-
-// Home, Search and SearchResults all render the same feed state — the open cart,
-// veg mode and its scope, the favourite hearts. That state used to live in Home
-// and travel to the other two as route params, which gave each screen its own
-// copy to edit: dismissing the cart on the search screen left Home's copy
+// Home, Search and SearchResults all render the same shared state — the open
+// cart, veg mode and its scope, the favourite hearts. That state used to live in
+// Home and travel to the other two as route params, which gave each screen its
+// own copy to edit: dismissing the cart on the search screen left Home's copy
 // standing, and a heart toggled in the results didn't stick once you went back.
-// One provider, one copy.
-const FeedContext = createContext(null);
-
-// Veg mode survives a restart — it's a browsing preference, and a customer who
-// turned it on doesn't expect to be shown meat again after the OS reclaimed a
-// backgrounded app. The cart is deliberately NOT stored here: it lives
-// server-side, so it's already the same cart on every device.
+// One copy of each, held above the navigator.
 //
-// Reading it is src/api/launch.js's job now, not this provider's: veg mode is half of
-// the home-feed query key, so the launch prefetch can't build the key without it, and
-// hydrating it a render late meant Home fired one feed request under the default
-// preference and a second under the customer's real one a beat afterwards.
-
+// It was also, for a while, one context holding all of it, which had a cost of its
+// own. React Navigation keeps every tab screen mounted, so a single cart change
+// re-rendered Home, Search, Order History, Profile and the tab bar at once — the
+// whole feed included, for a change three of those screens had no way to show. The
+// three concerns now sit in three providers, and a screen subscribes only to the
+// ones it reads:
+//
+//   useCartState()  — the cart, the bill, and the ways to change them
+//   useVegMode()    — veg mode and its scope (which is also the app's accent)
+//   useFavourites() — the hearts
+//
+// A screen that wants nothing but the number of items in the cart shouldn't take
+// even `useCartState()` — `useCartItemCount()` in hooks/useCart.js narrows the
+// ["cart"] query to that number.
+//
+// Ordering below matters only in that the cart and the hearts both read the
+// session and veg mode syncs against the customer's stored preferences, so all
+// three sit under CustomerAuthProvider (see App.js).
 export function FeedProvider({ children }) {
-  const { cart, bill, isLoading: cartLoading, addItem, updateItem, discardCart } = useCart();
-  const { user, isAuthenticated } = useCustomerAuth();
-  const queryClient = useQueryClient();
-  const toggleFavorite = useToggleFavorite();
-  const updatePreferences = useUpdatePreferences();
-
-  // Hearts the customer has toggled this session, layered over the `isFavorited`
-  // each card already carries from the server. Only overrides live here — seeding
-  // this from a hardcoded list is what used to make demo restaurants show up
-  // favourited for every real customer.
-  const [favouriteOverrides, setFavouriteOverrides] = useState({});
-
-  const launchStorage = getStorageSnapshot();
-  const [vegOnly, setVegOnly] = useState(launchStorage?.vegOnly ?? false);
-  const [vegScope, setVegScope] = useState(launchStorage?.vegScope ?? DEFAULT_VEG_SCOPE);
-
-  // Nothing is written back until the stored copy has been read, or the first
-  // render would overwrite the saved preference with the default.
-  const hydrated = useRef(!!launchStorage);
-
-  useEffect(() => {
-    if (hydrated.current) return;
-    let cancelled = false;
-
-    whenStorageReady().then((storage) => {
-      if (cancelled) return;
-      setVegOnly(storage.vegOnly);
-      setVegScope(storage.vegScope);
-      hydrated.current = true;
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!hydrated.current) return;
-    AsyncStorage.setItem(FEED_KEY, JSON.stringify({ vegOnly, vegScope })).catch(() => {});
-  }, [vegOnly, vegScope]);
-
-  // The server's stored preference wins once the profile lands — it's the same
-  // customer's choice made on whatever device they last used.
-  useEffect(() => {
-    const preferences = user?.preferences;
-    if (!preferences) return;
-    if (preferences.vegModeEnabled !== undefined) setVegOnly(!!preferences.vegModeEnabled);
-    if (preferences.vegModeScope) setVegScope(preferences.vegModeScope);
-  }, [user?.preferences]);
-
-  // Signing out must not leave one customer's hearts showing for whoever signs in
-  // next on the same handset.
-  useEffect(() => {
-    if (!isAuthenticated) setFavouriteOverrides({});
-  }, [isAuthenticated]);
-
-  const addToCart = useCallback(
-    (_restaurantName, line) =>
-      addItem.mutateAsync({
-        menuItemId: line.itemId,
-        qty: line.quantity,
-        selectedOptions: (line.selectedOptions ?? []).map((option) => ({
-          // The server resolves which group an option belongs to — sending
-          // groupId is neither needed nor accepted (Gotcha #5).
-          optionId: option.optionId ?? option.id,
-          ...(option.qty ? { qty: option.qty } : {}),
-        })),
-      }),
-    [addItem],
+  return (
+    <BrowsePreferencesProvider>
+      <FavouritesProvider>
+        <CartProvider>{children}</CartProvider>
+      </FavouritesProvider>
+    </BrowsePreferencesProvider>
   );
-
-  const setLineQuantity = useCallback(
-    (key, quantity) => updateItem.mutateAsync({ lineItemId: key, qty: quantity }),
-    [updateItem],
-  );
-
-  const clearCart = useCallback(() => discardCart.mutateAsync(), [discardCart]);
-
-  // `isFave` is what the card is currently showing, so the next state is always
-  // its opposite — derived once here rather than in each caller.
-  const toggleFavourite = useCallback(
-    (id, isFave) => {
-      const next = !isFave;
-      setFavouriteOverrides((current) => ({ ...current, [id]: next }));
-
-      if (!isAuthenticated) return;
-
-      toggleFavorite.mutate(
-        { id, isFavoriting: next },
-        {
-          // The heart goes back where it was if the server refused it, rather
-          // than showing a favourite that was never saved.
-          onError: () =>
-            setFavouriteOverrides((current) => ({ ...current, [id]: isFave })),
-        },
-      );
-    },
-    [isAuthenticated, toggleFavorite],
-  );
-
-  const isFavourite = useCallback(
-    (id, serverValue) => favouriteOverrides[id] ?? !!serverValue,
-    [favouriteOverrides],
-  );
-
-  // Applying while veg mode is already on with the same scope reads as "turn it
-  // back off" — the tile is still the on/off affordance in the design.
-  const applyVegScope = useCallback(
-    (scope) => {
-      const nextVegOnly = !(vegOnly && scope === vegScope);
-
-      setVegOnly(nextVegOnly);
-      setVegScope(scope);
-
-      // Deliberately outside the state updater: React may call an updater twice,
-      // and a request is not something that may fire twice.
-      if (isAuthenticated) {
-        updatePreferences.mutate({ vegModeEnabled: nextVegOnly, vegModeScope: scope });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ["homeFeed"] });
-      }
-    },
-    [vegOnly, vegScope, isAuthenticated, updatePreferences, queryClient],
-  );
-
-  const value = useMemo(
-    () => ({
-      cart,
-      bill,
-      cartLoading,
-      addToCart,
-      setLineQuantity,
-      clearCart,
-      isCartMutating: addItem.isPending || updateItem.isPending || discardCart.isPending,
-      isFavourite,
-      toggleFavourite,
-      vegOnly,
-      vegScope,
-      applyVegScope,
-    }),
-    [
-      cart,
-      bill,
-      cartLoading,
-      addToCart,
-      setLineQuantity,
-      clearCart,
-      addItem.isPending,
-      updateItem.isPending,
-      discardCart.isPending,
-      isFavourite,
-      toggleFavourite,
-      vegOnly,
-      vegScope,
-      applyVegScope,
-    ],
-  );
-
-  return <FeedContext.Provider value={value}>{children}</FeedContext.Provider>;
-}
-
-export function useFeed() {
-  const ctx = useContext(FeedContext);
-  if (!ctx) throw new Error("useFeed must be inside FeedProvider");
-  return ctx;
 }

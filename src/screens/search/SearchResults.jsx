@@ -1,9 +1,12 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, View } from "react-native";
+import { FlatList, View } from "react-native";
 
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
-import { useFeed } from "@/context/FeedContext";
+import { useVegMode } from "@/context/BrowsePreferencesContext";
+import { useCartState } from "@/context/CartContext";
+import { useFavourites } from "@/context/FavouritesContext";
 import Screen from "@/components/ui/Screen";
+import LoadingState from "@/components/ui/LoadingState";
 import Text from "@/components/ui/Text";
 import DiscardCartDialog from "@/components/cart/DiscardCartDialog";
 import RestaurantCardLarge from "@/components/home/RestaurantCardLarge";
@@ -58,7 +61,9 @@ export default function SearchResults({ navigation, route }) {
   // and the favourite hearts are the feed's, shared through FeedContext so a
   // heart toggled here is still lit when the customer goes back.
   const query = route?.params?.query ?? "";
-  const { cart, clearCart, isFavourite, toggleFavourite, vegOnly, vegScope } = useFeed();
+  const { cart, clearCart, cartBarDismissed, dismissCartBar } = useCartState();
+  const { isFavourite, toggleFavourite } = useFavourites();
+  const { vegOnly, vegScope } = useVegMode();
   const { deliveryLocation } = useCustomerAuth();
 
   // Arriving with "pure veg restaurants only" already applied lights the
@@ -72,11 +77,6 @@ export default function SearchResults({ navigation, route }) {
   // The single-restaurant cart rule holds wherever a storefront can be opened,
   // so the results list answers a card tap the same way the home feed does.
   const [pendingRestaurant, setPendingRestaurant] = useState(null);
-
-  // Dismissing the bar hides it, it doesn't throw the order away — an X on a
-  // summary bar is "get this out of my way", and a half-built cart is not
-  // something to delete without asking.
-  const [cartBarDismissed, setCartBarDismissed] = useState(false);
 
   // Held stable so the memoized rows stay memoized: a fresh arrow on every
   // render would re-render every card the list has mounted.
@@ -152,13 +152,10 @@ export default function SearchResults({ navigation, route }) {
       </Text>
 
       <View className="mt-4">
-        <SearchFilterChips
-          selected={filters}
-          vegOnly={vegOnly}
-          onToggle={toggleFilter}
-          // No filter sheet exists yet, so the tile is inert for now.
-          onOpenFilters={() => {}}
-        />
+        {/* No `onOpenFilters`: the filter sheet hasn't been built, and the rail
+            leaves its tile out rather than showing one that answers a tap with
+            nothing. Pass the handler when the sheet lands. */}
+        <SearchFilterChips selected={filters} onToggle={toggleFilter} />
       </View>
 
       <SectionHeading className="mt-5 px-6">All restaurants</SectionHeading>
@@ -172,7 +169,6 @@ export default function SearchResults({ navigation, route }) {
 
       <SearchTopBar
         value={query}
-        vegOnly={vegOnly}
         // Editing the term is the search screen's job — go back to it.
         onPressField={() => navigation?.goBack()}
       />
@@ -186,7 +182,7 @@ export default function SearchResults({ navigation, route }) {
         ListEmptyComponent={
           isLoading ? (
             <View className="mt-7 items-center justify-center">
-              <ActivityIndicator size="large" color="#FF5E00" />
+              <LoadingState />
             </View>
           ) : isError ? (
             <Text className="mt-3 px-6 font-jakarta-medium text-[14px] leading-[20px] text-muted-foreground">
@@ -219,10 +215,9 @@ export default function SearchResults({ navigation, route }) {
           restaurantName={cart.restaurantName}
           restaurantImage={cartRestaurant}
           itemCount={cart.itemCount}
-          vegOnly={vegOnly}
           onViewMenu={() => openMenu({ id: cart.restaurantId, name: cart.restaurantName })}
           onViewCart={() => navigation?.navigate("Cart")}
-          onDismiss={() => setCartBarDismissed(true)}
+          onDismiss={dismissCartBar}
         />
       ) : null}
     </Screen>

@@ -1,25 +1,29 @@
-import { createContext, useContext, useEffect, useRef, useCallback } from "react";
+import { createContext, useContext, useEffect, useRef, useCallback, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { io } from "socket.io-client";
 
 import { getAccessToken } from "@/api/client";
 import { API_BASE } from "@/api/config";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
-import { useFeatureEnabled } from "@/context/FeatureFlagsContext";
+import { isFeatureEnabled } from "@/lib/features";
 
 const SocketContext = createContext(null);
 
 export function SocketProvider({ children }) {
   const queryClient = useQueryClient();
   const { sessionReady } = useCustomerAuth();
-  const liveTracking = useFeatureEnabled("liveTracking");
+  const liveTracking = isFeatureEnabled("liveTracking");
   
+  const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef(null);
   // ref-count rooms to prevent duplicate joins/leaves
   const activeRooms = useRef(new Map());
 
   useEffect(() => {
-    if (!sessionReady || !liveTracking) return;
+    if (!sessionReady || !liveTracking) {
+      setIsConnected(false);
+      return;
+    }
 
     const token = getAccessToken();
     if (!token) return;
@@ -32,10 +36,19 @@ export function SocketProvider({ children }) {
     socketRef.current = socket;
 
     socket.on("connect", () => {
+      setIsConnected(true);
       // Re-join any active rooms if the socket reconnects
       for (const orderId of activeRooms.current.keys()) {
         socket.emit("join_order", { orderId, token: getAccessToken() });
       }
+    });
+    
+    socket.on("disconnect", () => {
+      setIsConnected(false);
+    });
+
+    socket.on("connect_error", () => {
+      setIsConnected(false);
     });
     
     socket.on("reconnect", () => {
@@ -65,12 +78,22 @@ export function SocketProvider({ children }) {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
     });
 
+    // Kept as the ingestion point for the partner's position, but only ever
+    // merged onto a partner that is actually assigned: `deliveryPartner` is null
+    // until someone accepts the order, and spreading that null produced a
+    // `{ lat, lng }` object with no name on it — enough to make the tracking
+    // screen's `partner` truthy and draw a partner card for nobody.
+    //
+    // Nothing renders these coordinates today: `GET /orders/:id/tracking`
+    // returns no restaurant or destination coordinates to plot them against, so
+    // there is no honest geometry to draw from a lone moving point. The tracking
+    // screen leads with the ETA and the timeline instead.
     socket.on("partner_location_updated", (payload) => {
       const orderId = payload?.orderId;
       if (!orderId) return;
 
       queryClient.setQueryData(["orderTracking", orderId], (old) =>
-        old
+        old?.deliveryPartner
           ? {
               ...old,
               deliveryPartner: { ...old.deliveryPartner, lat: payload.lat, lng: payload.lng },
@@ -86,6 +109,7 @@ export function SocketProvider({ children }) {
     });
 
     return () => {
+      setIsConnected(false);
       socket.removeAllListeners();
       socket.disconnect();
       socketRef.current = null;
@@ -119,7 +143,7 @@ export function SocketProvider({ children }) {
   }, []);
 
   return (
-    <SocketContext.Provider value={{ joinOrder, leaveOrder }}>
+    <SocketContext.Provider value={{ joinOrder, leaveOrder, isConnected }}>
       {children}
     </SocketContext.Provider>
   );

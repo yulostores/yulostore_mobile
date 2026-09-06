@@ -1,7 +1,7 @@
 import { View } from "react-native";
 import { Clock, Leaf } from "lucide-react-native";
 
-import useResponsive from "@/hooks/useResponsive";
+import { colors } from "@/lib/tokens";
 import Card from "@/components/ui/Card";
 import { PressableDim } from "@/components/ui/PressableScale";
 import RemoteImage from "@/components/ui/RemoteImage";
@@ -20,7 +20,6 @@ export default function RestaurantCardLarge({
   onToggleFavourite,
   onPress,
 }) {
-  const { size } = useResponsive();
   const { name, image, fallbackImage, rating, cuisines = [], eta, distance, priceHint, pureVeg } =
     restaurant;
 
@@ -42,7 +41,7 @@ export default function RestaurantCardLarge({
         {/* The photo is the card's proportion, so it tracks the viewport —
             keeping the same 180/390 ratio the frame was drawn at rather than
             leaving a fixed band that crowds a small phone. */}
-        <View style={{ height: size(PHOTO_HEIGHT) }} className="w-full">
+        <View style={{ height: PHOTO_HEIGHT }} className="w-full">
           <RemoteImage
             source={image}
             fallback={fallbackImage}
@@ -76,7 +75,7 @@ export default function RestaurantCardLarge({
           <View className="flex-row items-center gap-3">
             {meta.length ? (
               <View className="flex-row items-center gap-1">
-                <Clock size={12} color="#666666" />
+                <Clock size={12} color={colors.muted.foreground} />
                 {meta.map((entry, index) => (
                   <View key={entry} className="flex-row items-center">
                     {index ? <View className="mx-1 size-1 rounded-full bg-border" /> : null}
@@ -97,9 +96,9 @@ export default function RestaurantCardLarge({
 
           {pureVeg ? (
             <View className="pt-3">
-              <View className="flex-row items-center gap-1 self-start rounded-lg bg-[#EAF6EA] px-2 py-1">
-                <Leaf size={9} color="#2E7D32" />
-                <Text className="font-jakarta text-[10px] leading-[15px] text-[#2E7D32]">
+              <View className="flex-row items-center gap-1 self-start rounded-lg bg-veg-tint px-2 py-1">
+                <Leaf size={9} color={colors.veg.DEFAULT} />
+                <Text className="font-jakarta text-[10px] leading-[15px] text-veg">
                   Pure veg restaurant
                 </Text>
               </View>

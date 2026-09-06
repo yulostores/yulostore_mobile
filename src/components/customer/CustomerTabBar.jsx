@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Platform, StyleSheet, View } from "react-native";
+import { useEffect, useState } from "react";
+import { StyleSheet, View } from "react-native";
 import { ClipboardList, House, Search, User } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -12,35 +12,27 @@ import Animated, {
 } from "react-native-reanimated";
 import * as Haptics from "expo-haptics";
 
-import { useFeed } from "@/context/FeedContext";
+import { useReportTabBarSpace } from "@/components/customer/tabBarSpace";
+import { useCartItemCount } from "@/hooks/useCart";
 import PressableScale from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
 import BlurBackdrop from "@/components/ui/BlurBackdrop";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { PRESS_SCALE, SPRING } from "@/lib/motion";
-import { cn } from "@/lib/utils";
-import useResponsive from "@/hooks/useResponsive";
+import { colors } from "@/lib/tokens";
 
 // Four fixed destinations: Home, Search, Orders, Profile.
-// Scan was removed — QR scanning is a low-frequency action better served by a
-// header shortcut or contextual button, not a permanent tab slot. Orders was
-// added because it's one of the highest-traffic destinations in any delivery
-// app — every major competitor gives it a permanent bottom-nav slot.
 const ICONS = { Home: House, Search: Search, Orders: ClipboardList, Profile: User };
 
-// --- Design tokens -----------------------------------------------------------
+/** Unselected icon and label colour. */
+const MUTED_ICON = colors.muted.icon;
 
-// Unselected icon color — a warm grey that's softer than the old hard #666.
-const MUTED_ICON = "#8E8E93";
-
-// Minimum bottom padding when the device reports 0 insets (mostly older Android
-// handsets with no gesture bar). Keeps the bar from sitting flush against the
-// physical bottom where it'd be hard to reach on a large screen.
-const MIN_BOTTOM_PADDING = 8;
+/** Inset from the screen edges, and the floor for the bottom safe-area inset. */
+const BOTTOM_INSET = 16;
 
 // ── Cart badge ──────────────────────────────────────────────────────────────
 
-function CartBadge({ count, accent }) {
+function CartBadge({ count }) {
   if (!count || count <= 0) return null;
 
   return (
@@ -56,18 +48,18 @@ function CartBadge({ count, accent }) {
         minWidth: 18,
         height: 18,
         borderRadius: 9,
-        backgroundColor: accent.strong,
+        backgroundColor: ACCENT.strong,
         alignItems: "center",
         justifyContent: "center",
         paddingHorizontal: 4,
-        // A crisp white ring separates the badge from the icon, making it
-        // legible over any backdrop — the same ring Zomato and Swiggy use.
+        // A crisp ring separates the badge from the icon behind it, so it stays
+        // legible over any backdrop.
         borderWidth: 2,
-        borderColor: "#FFFFFF",
+        borderColor: colors.card.DEFAULT,
       }}
     >
       <Text
-        style={{ color: "#FFFFFF", fontSize: 10, lineHeight: 13 }}
+        style={{ color: colors.primary.foreground, fontSize: 10, lineHeight: 13 }}
         className="font-jakarta-bold"
         maxFontSizeMultiplier={1}
       >
@@ -79,7 +71,7 @@ function CartBadge({ count, accent }) {
 
 // ── Single tab ──────────────────────────────────────────────────────────────
 
-function Tab({ route, label, selected, accent, cartCount, onPress }) {
+function Tab({ route, label, selected, cartCount, onPress }) {
   const progress = useSharedValue(selected ? 1 : 0);
   const reduced = useReducedMotion();
 
@@ -102,18 +94,17 @@ function Tab({ route, label, selected, accent, cartCount, onPress }) {
     transform: [{ scale: 0.8 + progress.value * 0.2 }],
   }));
 
-  // Label color interpolates between muted and the accent.
+  // Label color interpolates between muted and the ACCENT.
   const labelStyle = useAnimatedStyle(() => ({
-    color: interpolateColor(progress.value, [0, 1], [MUTED_ICON, accent.icon]),
+    color: interpolateColor(progress.value, [0, 1], [MUTED_ICON, ACCENT.icon]),
   }));
 
   const Icon = ICONS[route];
   const showBadge = route === "Home" && cartCount > 0;
 
   const handlePress = () => {
-    // Light haptic tap — the same weight Swiggy/Zomato use for tab switching.
-    // Wrapped in a try/catch because expo-haptics is a no-op on web and some
-    // Android emulators throw rather than silently ignoring.
+    // Wrapped in a try/catch: expo-haptics is a no-op on web and some Android
+    // emulators throw rather than silently ignoring.
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {
@@ -143,7 +134,7 @@ function Tab({ route, label, selected, accent, cartCount, onPress }) {
               width: 56,
               height: 32,
               borderRadius: 16,
-              backgroundColor: accent.strong,
+              backgroundColor: ACCENT.strong,
               opacity: 0, // Driven by animation
             },
             pillStyle,
@@ -154,10 +145,10 @@ function Tab({ route, label, selected, accent, cartCount, onPress }) {
         <Animated.View style={[{ position: "relative" }, iconStyle]}>
           <Icon
             size={24}
-            color={selected ? accent.icon : MUTED_ICON}
+            color={selected ? ACCENT.icon : MUTED_ICON}
             strokeWidth={selected ? 2.6 : 1.6}
           />
-          {showBadge && <CartBadge count={cartCount} accent={accent} />}
+          {showBadge && <CartBadge count={cartCount} />}
         </Animated.View>
 
         {/* Label */}
@@ -189,39 +180,37 @@ function Tab({ route, label, selected, accent, cartCount, onPress }) {
 // so it's a sibling of the active screen, not inside its scroll.
 export default function CustomerTabBar({ state, descriptors, navigation }) {
   const insets = useSafeAreaInsets();
-  const { vegOnly, cart } = useFeed();
-  const accent = accentFor(vegOnly);
-  const { size, isCompact } = useResponsive();
 
-  const cartCount = cart?.lineItems?.length ?? 0;
+  // Subscribing the bar to the whole cart made every "+" tap on a menu re-render
+  // the navigation chrome; this selects only the count out of the ["cart"] query.
+  const cartCount = useCartItemCount();
 
-  // Floating margin from the bottom, respecting safe area
-  const bottomMargin = Math.max(insets.bottom, size(16)) + size(12);
+  const bottomMargin = Math.max(insets.bottom, BOTTOM_INSET) + 12;
+
+  // The bar floats: it reserves no layout space, so every tab screen has to pad
+  // its own scroll content past it. Rather than have four screens each guess at
+  // the number, the bar measures itself and publishes what it actually occupies
+  // — see components/customer/tabBarSpace. Measured, not computed, because the
+  // row's height moves with the font scale the customer set.
+  const [barHeight, setBarHeight] = useState(0);
+  const reportSpace = useReportTabBarSpace();
+
+  useEffect(() => {
+    if (!reportSpace || !barHeight) return;
+    reportSpace(Math.round(barHeight + bottomMargin));
+  }, [reportSpace, barHeight, bottomMargin]);
 
   return (
     <View
-      style={[
-        styles.barWrapper, 
-        { 
-          bottom: bottomMargin,
-          left: size(16),
-          right: size(16),
-        }
-      ]}
+      onLayout={(event) => setBarHeight(event.nativeEvent.layout.height)}
+      style={[styles.barWrapper, { bottom: bottomMargin }]}
       accessibilityRole="tablist"
     >
       <View style={styles.blurContainer}>
         <BlurBackdrop intensity={100} />
       </View>
       
-      {/* Tab row — decreased vertical padding for less height */}
-      <View
-        style={{
-          flexDirection: "row",
-          paddingTop: size(12),
-          paddingBottom: size(12),
-        }}
-      >
+      <View className="flex-row py-3">
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const label = options.tabBarLabel ?? options.title ?? route.name;
@@ -244,7 +233,6 @@ export default function CustomerTabBar({ state, descriptors, navigation }) {
               route={route.name}
               label={label}
               selected={selected}
-              accent={accent}
               cartCount={cartCount}
               onPress={onPress}
             />
@@ -258,13 +246,15 @@ export default function CustomerTabBar({ state, descriptors, navigation }) {
 const styles = StyleSheet.create({
   barWrapper: {
     position: "absolute",
-    borderRadius: 32, // Curved edges
-    // Shadow — iOS
+    left: BOTTOM_INSET,
+    right: BOTTOM_INSET,
+    borderRadius: 32,
     shadowColor: "#000000",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 20,
-    // Shadow — Android: elevation without background color causes rectangle artifacts
+    // Android elevation without a background colour draws a rectangle artefact
+    // over the blur, so the shadow is iOS-only here.
     elevation: 0,
   },
   blurContainer: {

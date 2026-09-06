@@ -18,7 +18,10 @@ const RESEND_SECONDS = 30;
 // six digits are accepted there, so this just saves typing.
 const BYPASS_PLACEHOLDER_CODE = "123456";
 
-export default function OtpVerification({ onNext }) {
+// Verifying flips `isAuthenticated`, which swaps the whole signed-out stack for
+// the signed-in one — so there is nothing for this screen to navigate to on
+// success, and it takes no completion callback.
+export default function OtpVerification() {
   const { pendingPhone, devOtp, otpBypass, requestOtp, verifyOtp, loading } = useCustomerAuth();
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
@@ -52,7 +55,6 @@ export default function OtpVerification({ onNext }) {
     setError("");
     try {
       await verifyOtp(code);
-      onNext();
     } catch (verifyError) {
       // An expired code, a locked-out number, an unreachable server and a mistyped digit
       // all used to read as one flat "incorrect code", which sent the customer retyping

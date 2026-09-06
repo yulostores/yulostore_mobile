@@ -2,11 +2,12 @@ import { useEffect, useState } from "react";
 import { TextInput, View } from "react-native";
 import { X } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import BottomSheet from "@/components/ui/BottomSheet";
 import Button from "@/components/ui/Button";
 import PressableScale from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
-import { ACCENTS } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { PRESS_SCALE } from "@/lib/motion";
 
 // The free-text note checkout collects twice: instructions for the rider, and a
@@ -17,7 +18,7 @@ export default function NoteSheet({
   title,
   placeholder,
   value = "",
-  accent = ACCENTS.default,
+  accent = ACCENT,
   onSave,
   onDismiss,
 }) {
@@ -52,7 +53,7 @@ export default function NoteSheet({
           accessibilityRole="button"
           accessibilityLabel="Close"
         >
-          <X size={24} color="#1A1A1A" />
+          <X size={24} color={colors.foreground} />
         </PressableScale>
       </View>
 
@@ -60,7 +61,7 @@ export default function NoteSheet({
         value={draft}
         onChangeText={setDraft}
         placeholder={placeholder}
-        placeholderTextColor="#999999"
+        placeholderTextColor={colors.muted.placeholder}
         multiline
         autoFocus
         className="mt-5 min-h-[104px] rounded-2xl border border-border bg-white p-4 font-jakarta text-[16px] leading-[23px] text-foreground"

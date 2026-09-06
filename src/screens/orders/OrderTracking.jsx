@@ -1,21 +1,17 @@
-import { ActivityIndicator, Linking, ScrollView, View } from "react-native";
+import { Linking, ScrollView, View } from "react-native";
 
-import { useFeed } from "@/context/FeedContext";
+import { useVegMode } from "@/context/BrowsePreferencesContext";
 import Screen from "@/components/ui/Screen";
+import LoadingState from "@/components/ui/LoadingState";
 import Text from "@/components/ui/Text";
+import PageHeader from "@/components/customer/PageHeader";
 import VegModeBanner from "@/components/home/VegModeBanner";
 import DeliveryTimeline from "@/components/orders/DeliveryTimeline";
 import EtaCard from "@/components/orders/EtaCard";
 import OrderSummaryCard from "@/components/orders/OrderSummaryCard";
 import PartnerCard from "@/components/orders/PartnerCard";
-import TrackingMap from "@/components/orders/TrackingMap";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { useOrderSocket, useOrderTracking } from "@/hooks/useOrders";
-
-// How far the ETA card is pulled up over the map. The map is scenery; the card
-// is what's being read, and the overlap is what stops the screen opening on a
-// full band of scenery before the arrival time.
-const CARD_OVERLAP = 18;
 
 const SCROLL_PADDING = 24;
 
@@ -23,18 +19,22 @@ const SCROLL_PADDING = 24;
 // leaves open on the counter while they wait, so it's built to be read at a
 // glance from across the room and to answer, in this order: when, who, what.
 //
-// It reads its order from the seed in `data/orders` rather than from route
-// params — the params only carry which storefront was ordered from, and an
-// order that has been paid for belongs to the server, not to a navigation
-// stack. Swap the seed for a query when the orders endpoint lands.
+// It opens on the arrival time rather than on a map. The frames put a route map
+// at the top, and this screen carried one for a while — 150 lines of hand-drawn
+// SVG with a hardcoded origin, rider and destination, taking no position props
+// at all. Every customer saw the same imaginary street grid with a rider who
+// never moved, on the one screen they leave open specifically to watch something
+// move. There is nothing to draw a real one from yet either:
+// `GET /orders/:id/tracking` returns no coordinates for the restaurant or the
+// delivery address, and `partner_location_updated` streams a lone point with
+// nothing to plot it against. The map band comes back when a maps SDK and those
+// coordinates do; until then the screen shows only what it actually knows.
 //
-// Nothing here refreshes yet. The dispatcher's socket is already a dependency
-// (`socket.io-client`), and the partner's position, the stage and the ETA are
-// the three things it will move — which is why they're read off one order
-// object instead of being spread across component state.
+// The ETA, the stage timeline and the partner are all live — `useOrderSocket`
+// keeps them moving, with the tracking query polling as a fallback whenever the
+// socket is down.
 export default function OrderTracking({ navigation, route }) {
-  const { vegOnly } = useFeed();
-  const accent = accentFor(vegOnly);
+  const { vegOnly } = useVegMode();
 
   const orderId = route.params?.orderId;
   const { data: liveOrder, isLoading, isError } = useOrderTracking(orderId);
@@ -109,11 +109,11 @@ export default function OrderTracking({ navigation, route }) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: SCROLL_PADDING }}
       >
-        <TrackingMap accent={accent} onBack={back} />
+        <PageHeader title="Track order" size="md" onBack={back} />
 
         {isLoading ? (
           <View className="mt-10 items-center justify-center">
-            <ActivityIndicator size="large" color={accent.icon} />
+            <LoadingState />
           </View>
         ) : !order ? (
           // A seeded demo order used to be rendered here whenever the real one
@@ -130,7 +130,7 @@ export default function OrderTracking({ navigation, route }) {
             </Text>
           </View>
         ) : (
-          <View className="px-4" style={{ marginTop: -CARD_OVERLAP }}>
+          <View className="mt-5 px-4">
             <EtaCard order={order} vegOnly={vegOnly} />
 
             <DeliveryTimeline
@@ -140,10 +140,10 @@ export default function OrderTracking({ navigation, route }) {
             />
 
             {order.partner && (
-              <PartnerCard partner={order.partner} accent={accent} onCall={call} onChat={chat} className="mt-5" />
+              <PartnerCard partner={order.partner} accent={ACCENT} onCall={call} onChat={chat} className="mt-5" />
             )}
 
-            <OrderSummaryCard order={order} accent={accent} vegOnly={vegOnly} className="mt-5" />
+            <OrderSummaryCard order={order} accent={ACCENT} vegOnly={vegOnly} className="mt-5" />
           </View>
         )}
       </ScrollView>

@@ -13,7 +13,7 @@ function ImagePlaceholder() {
       style={{ width: "100%", aspectRatio: 1 }}
       className="items-center justify-center rounded-2xl bg-muted"
     >
-      <Text className="font-jakarta text-[14px] leading-[18px] text-[#999999]">Image</Text>
+      <Text className="font-jakarta text-[14px] leading-[18px] text-muted-placeholder">Image</Text>
     </View>
   );
 }

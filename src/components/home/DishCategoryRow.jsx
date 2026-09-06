@@ -1,7 +1,6 @@
 import { ScrollView } from "react-native";
 import { FadeIn } from "react-native-reanimated";
 
-import useResponsive from "@/hooks/useResponsive";
 import PressableScale from "@/components/ui/PressableScale";
 import RemoteImage from "@/components/ui/RemoteImage";
 import Text from "@/components/ui/Text";
@@ -13,13 +12,11 @@ const CELL_WIDTH = 64;
 const IMAGE_SIZE = 64;
 
 export default function DishCategoryRow({ items, onSelect }) {
-  const { size, gutter } = useResponsive();
-
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={{ gap: size(16), paddingHorizontal: gutter }}
+      contentContainerClassName="gap-4 px-6"
     >
       {items.map((item, index) => (
         <PressableScale
@@ -31,7 +28,7 @@ export default function DishCategoryRow({ items, onSelect }) {
           // A 64pt cell is a small target; it needs the extra travel to
           // register as pressed under a thumb that covers most of it.
           scale={PRESS_SCALE.tight}
-          style={{ width: size(CELL_WIDTH) }}
+          style={{ width: CELL_WIDTH }}
           className="items-center"
           accessibilityRole="button"
           accessibilityLabel={item.label}
@@ -42,7 +39,7 @@ export default function DishCategoryRow({ items, onSelect }) {
           <RemoteImage
             source={item.image}
             fallback={item.fallbackImage}
-            style={{ width: size(IMAGE_SIZE), height: size(IMAGE_SIZE) }}
+            style={{ width: IMAGE_SIZE, height: IMAGE_SIZE }}
             resizeMode="contain"
             resizeMethod="resize"
           />

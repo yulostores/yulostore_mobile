@@ -1,5 +1,5 @@
 import { Pressable } from "react-native";
-import Animated, {
+import {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -7,10 +7,9 @@ import Animated, {
   withTiming,
 } from "react-native-reanimated";
 
+import { AnimatedPressable } from "@/lib/animated";
 import { DURATION, PRESS_SCALE, SPRING } from "@/lib/motion";
 import { cn } from "@/lib/utils";
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
  * A pressable that acknowledges the touch by shrinking very slightly.
@@ -23,8 +22,9 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
  * Honours the OS "reduce motion" setting, where the scale is dropped and only
  * the opacity dip remains — still an acknowledgement, without the movement.
  *
- * A single `AnimatedPressable` node carries both `className` (NativeWind 4.2's
- * `cssInterop` handles Reanimated components correctly) and the animated style.
+ * One node carries both the `className` and the animated style: `AnimatedPressable`
+ * is registered with NativeWind in `lib/animated.js`, so classes resolve on it the
+ * same way they do on a plain `Pressable`.
  */
 export default function PressableScale({
   children,

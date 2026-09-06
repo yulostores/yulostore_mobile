@@ -53,17 +53,8 @@ export default function Splash() {
           customer whose cookie is still being traded for a token. */}
       <Animated.View
         entering={enter(FadeInDown, { base: 120, duration: DURATION.slow })}
-        // Plain styles rather than classes: NativeWind only styles an
-        // `Animated.View` once something has registered it with `cssInterop`,
-        // and the module that does is one this screen has no reason to import.
-        style={{
-          position: "absolute",
-          top: "50%",
-          marginTop: ICON_SIZE / 2 + 24,
-          alignItems: "center",
-          gap: 6,
-          paddingHorizontal: 32,
-        }}
+        style={{ top: "50%", marginTop: ICON_SIZE / 2 + 24 }}
+        className="absolute items-center gap-1.5 px-8"
       >
         <Text className="font-jakarta-extrabold text-[26px] text-primary-foreground">Yulo Stores</Text>
         <Text className="font-jakarta text-[15px] text-primary-foreground" style={{ opacity: 0.85 }}>

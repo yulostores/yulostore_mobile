@@ -1,10 +1,11 @@
 import { Leaf } from "lucide-react-native";
 import Animated, { FadeInDown, ZoomIn } from "react-native-reanimated";
 
+import { colors } from "@/lib/tokens";
 import BottomSheet from "@/components/ui/BottomSheet";
 import Button from "@/components/ui/Button";
 import Text from "@/components/ui/Text";
-import { ACCENTS } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { enter } from "@/lib/motion";
 
 // What the veg-only fleet option on checkout actually buys, raised from the
@@ -15,7 +16,7 @@ import { enter } from "@/lib/motion";
 // they suspect it costs a rider work or money, so the sheet says outright that
 // it doesn't. It reads as an explainer, not a decision — the only control is
 // "Got it", and dismissing it leaves the option exactly as it was.
-export default function VegFleetSheet({ visible, accent = ACCENTS.default, onDismiss }) {
+export default function VegFleetSheet({ visible, accent = ACCENT, onDismiss }) {
   return (
     <BottomSheet visible={visible} onDismiss={onDismiss} label="veg-only fleet explainer">
       {/* This sheet is read top to bottom rather than scanned, so its parts
@@ -24,9 +25,9 @@ export default function VegFleetSheet({ visible, accent = ACCENTS.default, onDis
           something other than decoration. */}
       <Animated.View
         entering={enter(ZoomIn, { base: 80 })}
-        className="mt-4 size-14 items-center justify-center rounded-2xl bg-[#E4F1E5]"
+        className="mt-4 size-14 items-center justify-center rounded-2xl bg-veg-tint"
       >
-        <Leaf size={26} color="#2E7D32" strokeWidth={2.2} />
+        <Leaf size={26} color={colors.veg.DEFAULT} strokeWidth={2.2} />
       </Animated.View>
 
       <Animated.View entering={enter(FadeInDown, { base: 120 })}>

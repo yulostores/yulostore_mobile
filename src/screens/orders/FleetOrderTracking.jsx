@@ -1,13 +1,15 @@
-import { ActivityIndicator, Linking, Pressable, ScrollView, View } from "react-native";
+import { Linking, Pressable, ScrollView, View } from "react-native";
 import { Bike, Leaf, Phone } from "lucide-react-native";
 
-import { useFeed } from "@/context/FeedContext";
+import { colors } from "@/lib/tokens";
+import { useVegMode } from "@/context/BrowsePreferencesContext";
 import Screen from "@/components/ui/Screen";
+import LoadingState from "@/components/ui/LoadingState";
 import Text from "@/components/ui/Text";
 import PageHeader from "@/components/customer/PageHeader";
 import VegModeBanner from "@/components/home/VegModeBanner";
 import { TIMELINE, stageIndex } from "@/data/orders";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { useOrderSocket, useOrderTracking } from "@/hooks/useOrders";
 
 const ILLUSTRATION_HEIGHT = 200;
@@ -25,8 +27,7 @@ const SCROLL_PADDING = 32;
 // they find out it was met, so the chip sits on the partner's row rather than in
 // a footnote.
 export default function FleetOrderTracking({ navigation, route }) {
-  const { vegOnly } = useFeed();
-  const accent = accentFor(vegOnly);
+  const { vegOnly } = useVegMode();
 
   const orderId = route.params?.orderId;
   const { data: liveOrder, isLoading, isError } = useOrderTracking(orderId);
@@ -93,12 +94,12 @@ export default function FleetOrderTracking({ navigation, route }) {
         >
           <PageHeader variant="floating" onBack={back} topOffset={20} />
 
-          <Bike size={56} color={accent.icon} strokeWidth={1.8} />
+          <Bike size={56} color={ACCENT.icon} strokeWidth={1.8} />
         </View>
 
         {isLoading ? (
           <View className="mt-10 items-center justify-center">
-            <ActivityIndicator size="large" color={accent.icon} />
+            <LoadingState />
           </View>
         ) : !order ? (
           <View className="mt-10 items-center justify-center gap-2 px-10">
@@ -121,8 +122,8 @@ export default function FleetOrderTracking({ navigation, route }) {
                 {order.etaMinutes ? `Arriving in ${order.etaMinutes} mins` : "On its way"}
               </Text>
 
-              <View className="rounded-full bg-[#E4F1E5] px-3.5 py-1.5">
-                <Text className="font-jakarta-semibold text-[15px] leading-[21px] text-[#2E7D32]">
+              <View className="rounded-full bg-veg-tint px-3.5 py-1.5">
+                <Text className="font-jakarta-semibold text-[15px] leading-[21px] text-veg">
                   {TIMELINE[current]?.label || "On the way"}
                 </Text>
               </View>
@@ -158,7 +159,7 @@ export default function FleetOrderTracking({ navigation, route }) {
             {order.partner ? (
               <View className="mt-6 flex-row items-center gap-3.5 rounded-3xl bg-muted p-3.5">
                 <View
-                  style={{ backgroundColor: accent.icon }}
+                  style={{ backgroundColor: ACCENT.icon }}
                   className="size-14 items-center justify-center rounded-full"
                 >
                   <Text className="font-jakarta-bold text-[18px] leading-[24px] text-white">
@@ -175,10 +176,10 @@ export default function FleetOrderTracking({ navigation, route }) {
                   </Text>
 
                   {vegFleet ? (
-                    <View className="flex-row items-center gap-1.5 self-start rounded-full bg-[#E4F1E5] px-2.5 py-1">
-                      <Leaf size={13} color="#2E7D32" strokeWidth={2.2} />
+                    <View className="flex-row items-center gap-1.5 self-start rounded-full bg-veg-tint px-2.5 py-1">
+                      <Leaf size={13} color={colors.veg.DEFAULT} strokeWidth={2.2} />
 
-                      <Text className="font-jakarta-medium text-[14px] leading-[20px] text-[#2E7D32]">
+                      <Text className="font-jakarta-medium text-[14px] leading-[20px] text-veg">
                         Veg-only fleet bag
                       </Text>
                     </View>
@@ -190,16 +191,16 @@ export default function FleetOrderTracking({ navigation, route }) {
                   hitSlop={8}
                   accessibilityRole="button"
                   accessibilityLabel={`Call ${order.partner.name}`}
-                  style={{ backgroundColor: accent.tint }}
+                  style={{ backgroundColor: ACCENT.tint }}
                   className="size-12 items-center justify-center rounded-full"
                 >
-                  <Phone size={20} color={accent.icon} strokeWidth={2.2} />
+                  <Phone size={20} color={ACCENT.icon} strokeWidth={2.2} />
                 </Pressable>
               </View>
             ) : null}
 
             <Pressable onPress={help} hitSlop={8} accessibilityRole="button" className="mt-6 self-start">
-              <Text style={{ color: accent.icon }} className="font-jakarta-bold text-[17px] leading-[24px]">
+              <Text style={{ color: ACCENT.icon }} className="font-jakarta-bold text-[17px] leading-[24px]">
                 Need help with this order?
               </Text>
             </Pressable>

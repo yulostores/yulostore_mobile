@@ -3,13 +3,14 @@ import { ScrollView, useWindowDimensions, View } from "react-native";
 import { Check, X } from "lucide-react-native";
 import Animated, { ZoomIn } from "react-native-reanimated";
 
+import { colors } from "@/lib/tokens";
 import BottomSheet from "@/components/ui/BottomSheet";
 import Button from "@/components/ui/Button";
 import PressableScale from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
 import DietMark from "@/components/menu/DietMark";
 import QuantityStepper from "@/components/menu/QuantityStepper";
-import { ACCENTS } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { DURATION, PRESS_SCALE, enter } from "@/lib/motion";
 import { defaultSelection, formatPrice, totalFor } from "@/data/menu";
 
@@ -25,7 +26,7 @@ const BODY_HEIGHT_RATIO = 0.55;
 //
 // Nothing is added until the button is pressed: closing the sheet leaves the
 // cart exactly as it was, which is why the stepper has no zero.
-export default function ItemCustomiseSheet({ item, accent = ACCENTS.default, onAdd, onDismiss }) {
+export default function ItemCustomiseSheet({ item, accent = ACCENT, onAdd, onDismiss }) {
   const { height } = useWindowDimensions();
 
   const { groups = [], addOns = [] } = item?.customisation ?? {};
@@ -78,7 +79,7 @@ export default function ItemCustomiseSheet({ item, accent = ACCENTS.default, onA
           accessibilityRole="button"
           accessibilityLabel="Close"
         >
-          <X size={24} color="#1A1A1A" />
+          <X size={24} color={colors.foreground} />
         </PressableScale>
       </View>
 

@@ -2,10 +2,11 @@ import { View } from "react-native";
 import { Check, X } from "lucide-react-native";
 import Animated, { FadeIn, ZoomIn } from "react-native-reanimated";
 
+import { colors } from "@/lib/tokens";
 import BottomSheet from "@/components/ui/BottomSheet";
 import PressableScale from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
-import { ACCENTS } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { DURATION, PRESS_SCALE, enter } from "@/lib/motion";
 
 // The pick-one sheet checkout raises twice: once for the delivery tip, once for
@@ -16,7 +17,7 @@ export default function OptionSheet({
   title,
   options,
   value,
-  accent = ACCENTS.default,
+  accent = ACCENT,
   onSelect,
   onDismiss,
 }) {
@@ -34,7 +35,7 @@ export default function OptionSheet({
           accessibilityRole="button"
           accessibilityLabel="Close"
         >
-          <X size={24} color="#1A1A1A" />
+          <X size={24} color={colors.foreground} />
         </PressableScale>
       </View>
 

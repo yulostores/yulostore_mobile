@@ -47,7 +47,7 @@ export default function MenuListItem({ item, accent, onAdd }) {
           ) : null}
 
           {saving ? (
-            <Text className="font-jakarta-semibold text-[12px] leading-[18px] text-[#1B5E20]">
+            <Text className="font-jakarta-semibold text-[12px] leading-[18px] text-veg-ink">
               Save {formatPrice(saving)}
             </Text>
           ) : null}

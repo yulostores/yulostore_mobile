@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
   Linking,
 
@@ -10,13 +9,13 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useFeed } from "@/context/FeedContext";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Screen from "@/components/ui/Screen";
+import LoadingState from "@/components/ui/LoadingState";
 import Text from "@/components/ui/Text";
 import PageHeader from "@/components/customer/PageHeader";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { usePreferences, useUpdatePreferences } from "@/hooks/useUser";
 
 // Room under the last card for the save bar.
@@ -34,8 +33,6 @@ const SCROLL_PADDING = 120;
 // The preference underneath is the app's own and is held in screen state until a
 // preferences endpoint exists — swap `save` for a `client.patch` then.
 export default function NotificationPreferences({ navigation }) {
-  const { vegOnly } = useFeed();
-  const accent = accentFor(vegOnly);
   const insets = useSafeAreaInsets();
   
   const { data: preferences, isLoading } = usePreferences();
@@ -92,7 +89,7 @@ export default function NotificationPreferences({ navigation }) {
 
         <View className="mt-5 gap-3 px-5">
           {isLoading ? (
-            <ActivityIndicator size="large" color={accent.icon} className="mt-10" />
+            <LoadingState className="mt-10" />
           ) : (
             <>
               <Card className="w-full p-4">
@@ -112,7 +109,7 @@ export default function NotificationPreferences({ navigation }) {
                   To enable notifications, go to{" "}
                   <Text
                     onPress={() => Linking.openSettings?.()?.catch?.(() => {})}
-                    style={{ color: accent.icon }}
+                    style={{ color: ACCENT.icon }}
                     className="font-jakarta-semibold text-[13px] leading-[18px]"
                     accessibilityRole="link"
                   >
@@ -130,7 +127,7 @@ export default function NotificationPreferences({ navigation }) {
                   <Switch
                     value={orderUpdates}
                     onValueChange={change}
-                    trackColor={{ false: "#D4D4D4", true: accent.icon }}
+                    trackColor={{ false: "#D4D4D4", true: ACCENT.icon }}
                     thumbColor="#FFFFFF"
                     ios_backgroundColor="#D4D4D4"
                     accessibilityLabel="Order and purchase updates"
@@ -157,7 +154,7 @@ export default function NotificationPreferences({ navigation }) {
           // Faded rather than greyed: the design keeps the button in the accent
           // so it reads as the same control waiting for a change, not a
           // different one that has been switched off.
-          style={{ backgroundColor: accent.icon, opacity: saved ? 0.45 : 1 }}
+          style={{ backgroundColor: ACCENT.icon, opacity: saved ? 0.45 : 1 }}
           className="w-full"
           accessibilityLabel={saved ? "No changes to save" : "Save changes"}
         >

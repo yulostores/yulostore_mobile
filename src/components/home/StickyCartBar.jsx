@@ -2,11 +2,12 @@ import { Image, View } from "react-native";
 import { ChevronRight, X } from "lucide-react-native";
 import Animated, { SlideInDown, SlideOutDown } from "react-native-reanimated";
 
+import { colors } from "@/lib/tokens";
 import BlurBackdrop from "@/components/ui/BlurBackdrop";
 import Button from "@/components/ui/Button";
 import PressableScale from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { PRESS_SCALE, enter, exit } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -22,14 +23,12 @@ export default function StickyCartBar({
   restaurantName,
   restaurantImage,
   itemCount,
-  vegOnly = false,
   onViewMenu,
   onViewCart,
   onDismiss,
   className,
   style,
 }) {
-  const accent = accentFor(vegOnly);
 
   return (
     <Animated.View
@@ -95,12 +94,12 @@ export default function StickyCartBar({
 
               <View className="flex-row items-center gap-0.5">
                 <Text
-                  style={{ color: accent.strong }}
+                  style={{ color: ACCENT.strong }}
                   className="font-jakarta-medium text-[12px] leading-[18px]"
                 >
                   View menu
                 </Text>
-                <ChevronRight size={10} color={accent.strong} />
+                <ChevronRight size={10} color={ACCENT.strong} />
               </View>
             </View>
           </PressableScale>
@@ -108,7 +107,7 @@ export default function StickyCartBar({
 
         <Button
           onPress={onViewCart}
-          className={cn("h-12 flex-col gap-0 px-5", vegOnly && "bg-[#43A047] shadow-[#43A047]/40")}
+          className="h-12 flex-col gap-0 px-5"
           accessibilityLabel={`View cart, ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
         >
           <View className="items-center">
@@ -133,7 +132,7 @@ export default function StickyCartBar({
             accessibilityRole="button"
             accessibilityLabel={`Empty your cart from ${restaurantName}`}
           >
-            <X size={14} color="#1A1A1A" />
+            <X size={14} color={colors.foreground} />
           </PressableScale>
         </View>
       </View>

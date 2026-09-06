@@ -49,11 +49,3 @@ export const IS_EXPO_GO =
   !IS_WEB &&
   (Constants?.executionEnvironment === "storeClient" || Constants?.appOwnership === "expo");
 
-// A dev client or a standalone/EAS build — anything with the project's own
-// native code compiled in, which is what makes third-party native modules
-// reachable.
-export const IS_NATIVE_BUILD = !IS_WEB && !IS_EXPO_GO;
-
-export const RUNTIME_LABEL = IS_WEB ? "Web" : IS_EXPO_GO ? "Expo Go" : "Dev / native build";
-
-export default { IS_WEB, IS_EXPO_GO, IS_NATIVE_BUILD, RUNTIME_LABEL, optionalModule };

@@ -1,11 +1,12 @@
 import { View } from "react-native";
+import { colors } from "@/lib/tokens";
 
 // The FSSAI dietary marker — a dot inside a squared outline, green for veg and
 // red for everything else. The photo-led card labels the same thing with a
 // worded pill; the compact list has no photo to lay a pill over, so it prints
 // the mark beside the dish name instead.
 const TONES = {
-  veg: "#1B5E20",
+  veg: colors.veg.ink,
   nonVeg: "#C62828",
 };
 

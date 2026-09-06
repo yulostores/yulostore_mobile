@@ -6,8 +6,7 @@ import PageHeader from "@/components/customer/PageHeader";
 import SettingsRow from "@/components/customer/SettingsRow";
 import Text from "@/components/ui/Text";
 import { useSupportTickets } from "@/hooks/useSupport";
-import { useFeed } from "@/context/FeedContext";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 
 const SCROLL_PADDING = 32;
 
@@ -39,8 +38,6 @@ export default function HelpSupport({ navigation }) {
   // Already unwrapped to an array by the hook's `select`.
   const { data: tickets = [], isLoading } = useSupportTickets();
 
-  const { vegOnly } = useFeed();
-  const accent = accentFor(vegOnly);
 
   return (
     <Screen edges={["top", "bottom"]}>
@@ -69,7 +66,7 @@ export default function HelpSupport({ navigation }) {
           </Text>
 
           {isLoading ? (
-            <ActivityIndicator size="small" color={accent.icon} className="mt-4" />
+            <ActivityIndicator size="small" color={ACCENT.icon} className="mt-4" />
           ) : tickets.length > 0 ? (
             <View className="gap-3">
               {/* The subject is what the customer wrote in about — a six-character

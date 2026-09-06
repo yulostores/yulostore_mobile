@@ -1,6 +1,7 @@
 import { Pressable, View } from "react-native";
 import { Leaf, Star } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import Card from "@/components/ui/Card";
 import RemoteImage from "@/components/ui/RemoteImage";
 import Text from "@/components/ui/Text";
@@ -39,9 +40,9 @@ export default function FavouriteCard({ restaurant, onPress }) {
               the band rather than left to the menu screen. */}
           {pureVeg ? (
             <View className="absolute left-3 top-3 flex-row items-center gap-1 rounded-full bg-card px-2.5 py-1">
-              <Leaf size={12} color="#2E7D32" strokeWidth={2.2} />
+              <Leaf size={12} color={colors.veg.DEFAULT} strokeWidth={2.2} />
 
-              <Text className="font-jakarta-medium text-[12px] leading-[16px] text-[#2E7D32]">
+              <Text className="font-jakarta-medium text-[12px] leading-[16px] text-veg">
                 Veg-only fleet
               </Text>
             </View>

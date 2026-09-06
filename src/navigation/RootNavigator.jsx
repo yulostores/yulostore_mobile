@@ -29,13 +29,11 @@ import NotificationPreferences from "@/screens/profile/NotificationPreferences";
 import VegFleetPreference from "@/screens/profile/VegFleetPreference";
 import HelpSupport from "@/screens/support/HelpSupport";
 import SupportThread from "@/screens/support/SupportThread";
-import FeatureFlagsScreen from "@/screens/dev/FeatureFlags";
 
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
   const {
-    completeOnboarding,
     isAuthenticated,
     hydrated,
     sessionReady,
@@ -87,34 +85,19 @@ export default function RootNavigator() {
               launch, and a dissolve reads that way. It also keeps out of the
               way of Onboarding1's own entrance choreography, which would
               otherwise be playing while the whole screen slid underneath it. */}
-          <Stack.Screen name="Onboarding1" options={{ animation: "fade" }}>
-            {({ navigation }) => <OnboardingStep1 onNext={() => navigation.navigate("Onboarding2")} />}
-          </Stack.Screen>
+          <Stack.Screen name="Onboarding1" component={OnboardingStep1} options={{ animation: "fade" }} />
 
-          <Stack.Screen name="Onboarding2">
-            {({ navigation }) => <OnboardingStep2 onNext={() => navigation.navigate("Onboarding3")} />}
-          </Stack.Screen>
+          <Stack.Screen name="Onboarding2" component={OnboardingStep2} />
 
-          <Stack.Screen name="Onboarding3">
-            {({ navigation }) => (
-              <OnboardingStep3
-                onNext={() => {
-                  completeOnboarding();
-                  navigation.reset({ index: 0, routes: [{ name: "Login" }] });
-                }}
-              />
-            )}
-          </Stack.Screen>
+          {/* The last step also marks onboarding complete and resets onto Login
+              — see the screen itself, which owns both. */}
+          <Stack.Screen name="Onboarding3" component={OnboardingStep3} />
 
-          <Stack.Screen name="Login" options={{ animation: "fade" }}>
-            {({ navigation }) => <PhoneLogin onNext={() => navigation.navigate("Otp")} />}
-          </Stack.Screen>
+          <Stack.Screen name="Login" component={PhoneLogin} options={{ animation: "fade" }} />
 
           {/* Verifying flips `isAuthenticated`, which swaps this whole group for
               the one below — there's nothing to navigate to on success. */}
-          <Stack.Screen name="Otp">
-            {() => <OtpVerification onNext={() => {}} />}
-          </Stack.Screen>
+          <Stack.Screen name="Otp" component={OtpVerification} />
         </Stack.Group>
       ) : (
         <Stack.Group>
@@ -127,28 +110,11 @@ export default function RootNavigator() {
               the opening route (never pushed onto): saving it clears `needsProfile`, and
               this resets onward to whichever step is still outstanding rather than
               stranding a brand-new customer on the feed with no delivery address. */}
-          <Stack.Screen name="ProfileSetup">
-            {({ navigation }) => (
-              <ProfileSetup
-                onNext={() =>
-                  navigation.reset({
-                    index: 0,
-                    routes: [{ name: needsLocation ? "Location" : "Tabs" }],
-                  })
-                }
-              />
-            )}
-          </Stack.Screen>
+          <Stack.Screen name="ProfileSetup" component={ProfileSetup} />
 
           {/* Reachable after signing in as well as before it: the feed's address
               chip opens it to change where the order goes. */}
-          <Stack.Screen name="Location">
-            {({ navigation }) => (
-              <LocationSetup
-                onNext={() => navigation.reset({ index: 0, routes: [{ name: "Tabs" }] })}
-              />
-            )}
-          </Stack.Screen>
+          <Stack.Screen name="Location" component={LocationSetup} />
 
           <Stack.Screen name="SearchResults" component={SearchResults} options={{ animation: "fade" }} />
 
@@ -210,24 +176,11 @@ export default function RootNavigator() {
           {/* Where the tracking screens send a customer who needs a person. */}
           <Stack.Screen name="Support" component={SupportThread} />
 
-          {/* Registered only in development, so the flag panel is not merely
-              hidden in a release build but absent from the navigator — there is
-              no route name a deep link or a stale navigation state could use to
-              reach it. */}
-          {__DEV__ ? <Stack.Screen name="FeatureFlags" component={FeatureFlagsScreen} /> : null}
-
           {/* The remaining rows on the settings and profile lists name screens that
               haven't been built. One parameterised placeholder rather than a route
               each: they differ only by title, and a row that dead-ends is worse than
               one that says which flow it's waiting on. */}
-          <Stack.Screen name="Placeholder">
-            {({ route }) => (
-              <PlaceholderScreen
-                title={route.params?.title ?? "Coming soon"}
-                flow={route.params?.flow ?? "a later pass"}
-              />
-            )}
-          </Stack.Screen>
+          <Stack.Screen name="Placeholder" component={PlaceholderScreen} />
         </Stack.Group>
       )}
     </Stack.Navigator>

@@ -25,5 +25,9 @@ export function homeFeedQuery({ lat, lng, vegOnly, vegScope }) {
           vegScope,
         },
       }),
+    // One of the two opt-ins to focus refetching (see queryClient.js): a feed
+    // that has been sitting behind a locked screen is exactly the thing a
+    // customer expects to be current when they come back to it.
+    refetchOnWindowFocus: true,
   };
 }

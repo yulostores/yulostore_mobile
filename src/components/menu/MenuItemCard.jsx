@@ -1,7 +1,7 @@
 import { Image, View } from "react-native";
 import { Plus, Utensils } from "lucide-react-native";
 
-import useResponsive from "@/hooks/useResponsive";
+import { colors } from "@/lib/tokens";
 import Card from "@/components/ui/Card";
 import { PressableDim } from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
@@ -13,10 +13,10 @@ const PHOTO_HEIGHT = 120;
 // Diet marker top-left, the promotional badge bottom-left — the two never share
 // a corner, so a bestselling dish that's also discounted still reads cleanly.
 const TAG_TONES = {
-  veg: { pill: "bg-[#E7F4E8]", label: "text-[#1B5E20]" },
+  veg: { pill: "bg-veg-tint", label: "text-veg-ink" },
   nonVeg: { pill: "bg-[#FDE7E7]", label: "text-[#C62828]" },
   bestseller: { pill: "bg-[#FFF3DC]", label: "text-[#B26A00]" },
-  saving: { pill: "bg-[#E7F4E8]", label: "text-[#1B5E20]" },
+  saving: { pill: "bg-veg-tint", label: "text-veg-ink" },
 };
 
 function Tag({ label, tone }) {
@@ -35,21 +35,20 @@ function Tag({ label, tone }) {
 // of the pair, so the price block and the Add button are pushed to the bottom
 // rather than following a description whose length varies dish to dish.
 export default function MenuItemCard({ item, accent, onAdd }) {
-  const { size } = useResponsive();
   const { name, description, price, mrp, image, veg, tag } = item;
   const saving = savingFor(item);
   const badge = saving ? `Save ${formatPrice(saving)}` : tag;
 
   return (
     <Card className="flex-1 overflow-hidden p-0">
-      <View style={{ height: size(PHOTO_HEIGHT) }} className="w-full bg-muted">
+      <View style={{ height: PHOTO_HEIGHT }} className="w-full bg-muted">
         {image ? (
           <Image source={image} style={{ width: "100%", height: "100%" }} resizeMode="cover" resizeMethod="resize" />
         ) : (
           // Menu items whose photo hasn't been shot yet keep the card's shape
           // instead of collapsing the row they're in.
           <View className="flex-1 items-center justify-center">
-            <Utensils size={28} color="#999999" />
+            <Utensils size={28} color={colors.muted.placeholder} />
           </View>
         )}
 

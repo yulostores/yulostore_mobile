@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useFeed } from "@/context/FeedContext";
+import { colors } from "@/lib/tokens";
+import { useVegMode } from "@/context/BrowsePreferencesContext";
+import { TAB_BAR_GAP, useTabBarSpace } from "@/components/customer/tabBarSpace";
+import { useCartState } from "@/context/CartContext";
 import { useRecentSearches, usePopularSearches, useTypeahead, useAddRecentSearch } from "@/hooks/useSearch";
 import useVoiceSearch from "@/hooks/useVoiceSearch";
-import useResponsive from "@/hooks/useResponsive";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
@@ -19,7 +20,6 @@ import { formatImageUrl } from "@/api/config";
 
 // Stand-ins for a restaurant or dish the API returned without a thumbnail.
 const cartRestaurant = require("@/assets/home/cart-restaurant-avatar.png");
-const dishBiryani = require("@/assets/home/dish-biryani.png");
 const categoryBiryani = require("@/assets/home/category-biryani.png");
 
 // The design lists five suggestions before the card stops growing.
@@ -38,17 +38,25 @@ function Heading({ children, className }) {
   );
 }
 
+// The sticky cart pill is 80pt tall and floats above the tab bar, so content
+// scrolling under it needs that much again on top of the bar's own space.
+const STICKY_CART_HEIGHT = 80;
+
 export default function Search({ navigation, route }) {
-  const { cart, vegOnly } = useFeed();
-  const insets = useSafeAreaInsets();
-  const { size } = useResponsive();
+  const { cart, cartBarDismissed, dismissCartBar } = useCartState();
+  const { vegOnly } = useVegMode();
+  // Measured by the tab bar, which already folds in the bottom safe-area inset.
+  const tabBarSpace = useTabBarSpace();
 
   const [query, setQuery] = useState("");
-  // Hides the summary bar without throwing the order away.
-  const [cartBarDismissed, setCartBarDismissed] = useState(false);
 
   const trimmed = query.trim();
   const searching = trimmed.length > 0;
+
+  // One condition, read twice: the padding that reserves room for the pill has
+  // to agree with whether the pill is actually up, or the reserved space becomes
+  // a gap of nothing at the end of the list.
+  const showCartBar = !!cart && !searching && !cartBarDismissed;
 
   // These arrive already unwrapped from their `{ recent }` / `{ popular }` /
   // `{ results }` envelopes — see the hooks' `select`.
@@ -67,11 +75,13 @@ export default function Search({ navigation, route }) {
           // Typeahead is deliberately not veg-filtered — `foodType` is rendered
           // as a dot rather than the row being hidden.
           veg: result.foodType ? result.foodType === "veg" : null,
+          // A restaurant keeps its branded avatar stand-in; a dish with no
+          // thumbnail falls through to RemoteImage's tinted tile.
           image: result.thumbnailUrl
             ? { uri: formatImageUrl(result.thumbnailUrl) }
             : result.type === "restaurant"
               ? cartRestaurant
-              : dishBiryani,
+              : null,
           offer: false,
         }))
         .slice(0, MAX_SUGGESTIONS),
@@ -145,7 +155,6 @@ export default function Search({ navigation, route }) {
         onSubmit={() => submitSearch(query)}
         onVoiceSearch={voice.toggle}
         listening={voice.listening}
-        vegOnly={vegOnly}
       />
 
       {voice.error ? (
@@ -155,17 +164,19 @@ export default function Search({ navigation, route }) {
       <ScrollView
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: cart ? 120 : 40 }}
+        contentContainerStyle={{
+          paddingBottom:
+            tabBarSpace + TAB_BAR_GAP + (showCartBar ? STICKY_CART_HEIGHT + TAB_BAR_GAP : 0),
+        }}
       >
         {searching ? (
           <View className="mt-4">
             {isLoadingTypeahead ? (
-              <ActivityIndicator size="small" color="#FF5E00" className="mt-5" />
+              <ActivityIndicator size="small" color={colors.primary.DEFAULT} className="mt-5" />
             ) : (
               <SearchSuggestionList
                 items={suggestions}
                 matchLength={trimmed.length}
-                vegOnly={vegOnly}
                 onSelect={(dish) => {
                   setQuery(dish.label);
                   submitSearch(dish.label);
@@ -205,14 +216,13 @@ export default function Search({ navigation, route }) {
       </ScrollView>
 
       {/* Hidden while suggestions are up — that's where the keyboard sits. */}
-      {cart && !searching && !cartBarDismissed ? (
-        <View className="absolute inset-x-0" style={{ bottom: Math.max(insets.bottom, size(16)) + size(90) }}>
+      {showCartBar ? (
+        <View className="absolute inset-x-0" style={{ bottom: tabBarSpace + TAB_BAR_GAP }}>
           <StickyCartBar
-            style={{ marginHorizontal: size(16) }}
+            className="mx-4"
             restaurantName={cart.restaurantName}
             restaurantImage={cartRestaurant}
             itemCount={cart.itemCount}
-            vegOnly={vegOnly}
             onViewMenu={() =>
               navigation?.navigate("Menu", {
                 restaurantId: cart.restaurantId,
@@ -220,7 +230,7 @@ export default function Search({ navigation, route }) {
               })
             }
             onViewCart={() => navigation?.navigate("Cart")}
-            onDismiss={() => setCartBarDismissed(true)}
+            onDismiss={dismissCartBar}
           />
         </View>
       ) : null}

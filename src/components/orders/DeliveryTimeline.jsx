@@ -1,14 +1,15 @@
 import { View } from "react-native";
 import { Check } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import Card from "@/components/ui/Card";
 import Text from "@/components/ui/Text";
 import { TIMELINE, stageIndex } from "@/data/orders";
 
-const DONE = { ring: "#E4F1E5", ink: "#2E7D32" };
+const DONE = { ring: colors.veg.tint, ink: colors.veg.DEFAULT };
 const LIVE = { ring: "#E3EDFB", ink: "#1A56C4" };
-const RAIL_DONE = "#2E7D32";
-const RAIL_AHEAD = "#E8E2D9";
+const RAIL_DONE = colors.veg.DEFAULT;
+const RAIL_AHEAD = colors.border;
 
 const DOT_SIZE = 24;
 

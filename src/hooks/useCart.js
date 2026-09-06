@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import client from "@/api/client";
@@ -104,11 +105,6 @@ export function useCart() {
     onSuccess: invalidate,
   });
 
-  const applyPromo = useMutation({
-    mutationFn: (code) => client.post("/cart/apply-promo", { code }),
-    onSuccess: invalidate,
-  });
-
   const rawCart = data?.cart;
   const restaurantId =
     rawCart && typeof rawCart.restaurantId === "object"
@@ -127,12 +123,19 @@ export function useCart() {
     staleTime: 10 * 60 * 1000,
   });
 
-  const cart = rawCart?.items?.length
+  // Derived on every render of whoever holds this hook, and handed straight into
+  // CartContext's value — so without memoising, a provider render for any other
+  // reason produced a brand-new `cart` object and re-rendered every screen reading
+  // it. Keyed on the query data and the resolved name, which is all it is built from.
+  const restaurantName = restaurantData?.restaurant?.name ?? "Your order";
+
+  const cart = useMemo(() => (
+    rawCart?.items?.length
     ? {
         ...rawCart,
         itemCount: rawCart.items.reduce((sum, item) => sum + (item.qty ?? 0), 0),
         restaurantId,
-        restaurantName: restaurantData?.restaurant?.name ?? "Your order",
+        restaurantName,
         lines: rawCart.items.map((item) => ({
           ...item,
           key: item._id,
@@ -151,9 +154,11 @@ export function useCart() {
           },
         })),
       }
-    : null;
+    : null
+  ), [rawCart, restaurantId, restaurantName]);
 
-  const bill = data?.bill
+  const bill = useMemo(() => (
+    data?.bill
     ? {
         itemTotal: data.bill.itemTotal,
         discounts: data.bill.discountAmount
@@ -165,7 +170,28 @@ export function useCart() {
         tip: data.bill.tip ?? 0,
         toPay: data.bill.grandTotal,
       }
-    : null;
+    : null
+  ), [data]);
 
-  return { cart, bill, isLoading, isError, refetch, addItem, updateItem, discardCart, applyPromo };
+  return { cart, bill, isLoading, isError, refetch, addItem, updateItem, discardCart };
+}
+
+// The tab bar wants one number, not the cart. Reading it through `useCartState()`
+// subscribed the bar to every field on the cart context, so every "+" tap on a menu
+// re-rendered the navigation chrome along with the screen. This shares the same
+// ["cart"] query — no extra request — and `select` narrows it to the count, which
+// React Query compares structurally: a cart change that leaves the total quantity
+// alone notifies nothing here at all.
+export function useCartItemCount() {
+  const { isAuthenticated, sessionReady } = useCustomerAuth();
+
+  const { data } = useQuery({
+    queryKey: ["cart"],
+    queryFn: () => client.get("/cart"),
+    enabled: isAuthenticated && sessionReady,
+    select: (response) =>
+      (response?.cart?.items ?? []).reduce((sum, item) => sum + (item.qty ?? 0), 0),
+  });
+
+  return data ?? 0;
 }

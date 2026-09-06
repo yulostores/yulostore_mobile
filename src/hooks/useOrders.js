@@ -4,7 +4,6 @@ import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/rea
 import client, { getAccessToken } from "@/api/client";
 import { API_BASE } from "@/api/config";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
-import { useFeatureEnabled } from "@/context/FeatureFlagsContext";
 import { useSocket } from "@/context/SocketContext";
 
 // `GET /orders` → { orders, total, page }. `select` unwraps it so callers get the
@@ -18,6 +17,11 @@ export function useOrders() {
     queryFn: () => client.get("/orders"),
     select: (data) => data?.orders ?? [],
     enabled: isAuthenticated && sessionReady,
+    // The other opt-in to focus refetching (see queryClient.js). This list backs
+    // `useActiveOrder`, so an order that moved from "preparing" to "out for
+    // delivery" while the app was backgrounded is current the moment it's
+    // foregrounded, rather than a socket event late.
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -102,13 +106,16 @@ export function useReorder() {
 
 // Tracking is returned unwrapped (sendSuccess(res, 200, ..., tracking)).
 export function useOrderTracking(orderId) {
+  const { isConnected } = useSocket();
+
   return useQuery({
     queryKey: ["orderTracking", orderId],
     queryFn: () => client.get(`/orders/${orderId}/tracking`),
     enabled: !!orderId,
-    // The socket below is the primary update channel; this is the safety net for a
+    // The socket is the primary update channel; this is the safety net for a
     // dropped connection, and the reason a tracking screen left open still moves.
-    refetchInterval: 60 * 1000,
+    // Disabling it while the socket is healthy stops the redundant polling overdraw.
+    refetchInterval: isConnected ? false : 60 * 1000,
     staleTime: 0,
   });
 }

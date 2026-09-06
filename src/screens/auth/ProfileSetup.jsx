@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { KeyboardAvoidingView, View } from "react-native";
 
+import { useNavigation } from "@react-navigation/native";
+
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
@@ -25,8 +27,9 @@ import { describeError } from "@/lib/apiErrors";
 // reject can't be submitted and bounce back as a validation error.
 const MIN_NAME_LENGTH = 2;
 
-export default function ProfileSetup({ onNext }) {
-  const { pendingPhone, user, updateProfile } = useCustomerAuth();
+export default function ProfileSetup() {
+  const navigation = useNavigation();
+  const { pendingPhone, user, updateProfile, deliveryLocation, addresses } = useCustomerAuth();
   const [name, setName] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -40,7 +43,12 @@ export default function ProfileSetup({ onNext }) {
     setSaving(true);
     try {
       await updateProfile({ name: trimmed });
-      onNext();
+      // Saving the name clears the reason this screen opened, so it resets
+      // onward to whichever setup step is still outstanding rather than
+      // stranding a brand-new customer on the feed with nowhere to deliver to.
+      // Same condition RootNavigator picks the opening route with.
+      const needsLocation = !deliveryLocation && addresses.length === 0;
+      navigation.reset({ index: 0, routes: [{ name: needsLocation ? "Location" : "Tabs" }] });
     } catch (saveError) {
       // Staying on the screen rather than continuing anyway: this is the one chance to
       // capture the name, and an order placed without it is exactly the problem this

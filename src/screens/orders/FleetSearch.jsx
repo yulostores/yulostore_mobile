@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, View } from "react-native";
+import { Alert, View } from "react-native";
 import { Check, Search, TriangleAlert } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useFeed } from "@/context/FeedContext";
+import { colors } from "@/lib/tokens";
 import PageHeader from "@/components/customer/PageHeader";
 import Button from "@/components/ui/Button";
 import Screen from "@/components/ui/Screen";
+import LoadingState from "@/components/ui/LoadingState";
 import Text from "@/components/ui/Text";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { useOrderSocket, useVegFleetActions, useVegFleetStatus } from "@/hooks/useOrders";
 
 function clock(seconds) {
@@ -33,8 +34,6 @@ function clock(seconds) {
 // from the dispatcher, so it's read from the status endpoint and the
 // `veg_fleet_status_updated` socket event instead.
 export default function FleetSearch({ navigation, route }) {
-  const { vegOnly } = useFeed();
-  const accent = accentFor(vegOnly);
   const insets = useSafeAreaInsets();
 
   const orderId = route.params?.orderId;
@@ -114,15 +113,15 @@ export default function FleetSearch({ navigation, route }) {
 
       {isLoading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={accent.icon} />
+          <LoadingState />
         </View>
       ) : (
         <View className="flex-1 px-5 pt-6">
           <View className="flex-row items-center gap-2.5">
             {assigned ? (
-              <Check size={20} color="#2E7D32" strokeWidth={2.6} />
+              <Check size={20} color={colors.veg.DEFAULT} strokeWidth={2.6} />
             ) : (
-              <Search size={20} color="#1A1A1A" strokeWidth={2.2} />
+              <Search size={20} color={colors.foreground} strokeWidth={2.2} />
             )}
 
             <Text className="font-jakarta-medium text-[17px] leading-[24px] text-foreground">
@@ -144,8 +143,8 @@ export default function FleetSearch({ navigation, route }) {
             </View>
           ) : null}
 
-          <View className="mt-5 rounded-2xl bg-[#E4F1E5] px-4 py-3">
-            <Text className="font-jakarta text-[15px] leading-[22px] text-[#2E7D32]">
+          <View className="mt-5 rounded-2xl bg-veg-tint px-4 py-3">
+            <Text className="font-jakarta text-[15px] leading-[22px] text-veg">
               {assigned
                 ? "A veg-only partner is carrying your order in a dedicated bag. Nothing else is in it."
                 : "We'll keep looking for a veg-only partner. You don't need to do anything — we'll let you know as soon as one is assigned."}
@@ -156,7 +155,7 @@ export default function FleetSearch({ navigation, route }) {
             <Button
               onPress={trackVegFleet}
               size="lg"
-              style={{ backgroundColor: accent.icon }}
+              style={{ backgroundColor: ACCENT.icon }}
               className="mt-5 w-full shadow-lg shadow-black/20"
             >
               <Text className="font-jakarta-bold text-[17px] leading-[24px] text-white">
@@ -170,7 +169,7 @@ export default function FleetSearch({ navigation, route }) {
               onPress={() => keepWaiting.mutate(undefined, { onError: onActionError })}
               size="lg"
               disabled={busy}
-              style={{ backgroundColor: accent.icon }}
+              style={{ backgroundColor: ACCENT.icon }}
               className="mt-5 w-full shadow-lg shadow-black/20"
             >
               <Text className="font-jakarta-bold text-[17px] leading-[24px] text-white">
@@ -190,11 +189,11 @@ export default function FleetSearch({ navigation, route }) {
               size="lg"
               variant="secondary"
               disabled={busy}
-              style={{ borderColor: accent.icon }}
+              style={{ borderColor: ACCENT.icon }}
               className="mt-3 w-full"
             >
               <Text
-                style={{ color: accent.icon }}
+                style={{ color: ACCENT.icon }}
                 className="font-jakarta-bold text-[17px] leading-[24px]"
               >
                 Send any available partner

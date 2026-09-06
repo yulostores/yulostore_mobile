@@ -1,9 +1,10 @@
 import { Pressable, TextInput, View } from "react-native";
 import { Mic, Search } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import BackButton from "@/components/customer/BackButton";
 import Text from "@/components/ui/Text";
-import { LISTENING_COLOR, accentFor } from "@/lib/accent";
+import { ACCENT, LISTENING_COLOR } from "@/lib/accent";
 import { cn } from "@/lib/utils";
 
 // Figma "09 · Search". Same field as home's HomeSearchBar, but the veg tile is
@@ -19,18 +20,16 @@ export default function SearchTopBar({
   // that is present but inert is the exact ambiguity this layer exists to stop.
   showVoice = true,
   onPressField,
-  vegOnly = false,
   autoFocus = true,
   placeholder = "Search restaurants, dishes, cuisines",
 }) {
-  const accent = accentFor(vegOnly);
 
   return (
     <View className="w-full flex-row items-center gap-2 px-4">
       <BackButton size={24} className="size-11 items-center justify-center" />
 
       <View className="h-[52px] flex-1 flex-row items-center rounded-2xl bg-card px-4 border border-black/[0.06]">
-        <Search size={20} color={accent.icon} />
+        <Search size={20} color={ACCENT.icon} />
 
         {/* On the results screen the field only shows the committed term and
             hands the tap back to the search screen for editing — same doorway
@@ -46,7 +45,7 @@ export default function SearchTopBar({
               numberOfLines={1}
               className={cn(
                 "font-jakarta-semibold text-[14px]",
-                value ? "text-[#666666]" : "text-[#999999]",
+                value ? "text-muted-foreground" : "text-muted-placeholder",
               )}
             >
               {value || placeholder}
@@ -59,7 +58,7 @@ export default function SearchTopBar({
             onSubmitEditing={onSubmit}
             autoFocus={autoFocus}
             placeholder={placeholder}
-            placeholderTextColor="#999999"
+            placeholderTextColor={colors.muted.placeholder}
             returnKeyType="search"
             className="h-full flex-1 px-3 font-jakarta-semibold text-[14px] text-foreground"
             accessibilityLabel={placeholder}
@@ -76,7 +75,7 @@ export default function SearchTopBar({
               accessibilityRole="button"
               accessibilityLabel={listening ? "Stop voice search" : "Voice search"}
             >
-              <Mic size={20} color={listening ? LISTENING_COLOR : accent.icon} />
+              <Mic size={20} color={listening ? LISTENING_COLOR : ACCENT.icon} />
             </Pressable>
           </>
         ) : null}

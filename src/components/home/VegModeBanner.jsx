@@ -1,6 +1,7 @@
 import { View } from "react-native";
 import { Leaf } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
 
@@ -15,12 +16,12 @@ export default function VegModeBanner({
   return (
     <View
       className={cn(
-        "flex-row items-center gap-1.5 self-center rounded-full border border-[#43A047] bg-[#EAF6EA] px-3 py-1.5",
+        "flex-row items-center gap-1.5 self-center rounded-full border border-veg-strong bg-veg-tint px-3 py-1.5",
         className,
       )}
     >
-      <Leaf size={12} color="#2E7D32" />
-      <Text className="font-jakarta-medium text-[11px] leading-[15px] text-[#2E7D32]">{label}</Text>
+      <Leaf size={12} color={colors.veg.DEFAULT} />
+      <Text className="font-jakarta-medium text-[11px] leading-[15px] text-veg">{label}</Text>
     </View>
   );
 }

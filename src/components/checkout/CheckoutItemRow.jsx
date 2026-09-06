@@ -1,6 +1,7 @@
 import { Image, Pressable, View } from "react-native";
 import { ChevronRight, Utensils } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import Text from "@/components/ui/Text";
 import DietMark from "@/components/menu/DietMark";
 import QuantityStepper from "@/components/menu/QuantityStepper";
@@ -24,7 +25,7 @@ export default function CheckoutItemRow({ line, accent, onChangeQuantity, onEdit
         {line.image ? (
           <Image source={line.image} style={{ width: "100%", height: "100%" }} resizeMode="cover" resizeMethod="resize" />
         ) : (
-          <Utensils size={18} color="#999999" />
+          <Utensils size={18} color={colors.muted.placeholder} />
         )}
       </View>
 

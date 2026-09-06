@@ -1,7 +1,8 @@
 import { Image, Pressable, View } from "react-native";
 
+import RemoteImage from "@/components/ui/RemoteImage";
 import Text from "@/components/ui/Text";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 
 const offerTag = require("@/assets/home/offer-tag.png");
 
@@ -38,8 +39,7 @@ function SuggestionLabel({ label, matchLength }) {
   );
 }
 
-export default function SearchSuggestionList({ items, matchLength = 0, vegOnly = false, onSelect }) {
-  const accent = accentFor(vegOnly);
+export default function SearchSuggestionList({ items, matchLength = 0, onSelect }) {
 
   if (!items.length) return null;
 
@@ -57,8 +57,16 @@ export default function SearchSuggestionList({ items, matchLength = 0, vegOnly =
             style={{ width: THUMB_SIZE, height: THUMB_SIZE, borderRadius: THUMB_SIZE / 2 }}
             className="overflow-hidden"
           >
-            <Image source={item.image} style={{ width: "100%", height: "100%" }} resizeMode="cover" resizeMethod="resize" />
-            {item.offer ? <OfferStrip color={accent.ribbon} /> : null}
+            {/* A dish with no thumbnail gets the tinted tile rather than a
+                blank disc — `item.image` is null for those. */}
+            <RemoteImage
+              source={item.image}
+              iconSize={18}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+              resizeMethod="resize"
+            />
+            {item.offer ? <OfferStrip color={ACCENT.ribbon} /> : null}
           </View>
 
           <View className="flex-1">

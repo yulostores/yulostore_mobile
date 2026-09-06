@@ -4,12 +4,13 @@ import { Mic, Search, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
 
+import { colors } from "@/lib/tokens";
 import BottomSheet from "@/components/ui/BottomSheet";
 import PressableScale from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
 import VegModeBanner from "@/components/home/VegModeBanner";
 import useVoiceSearch from "@/hooks/useVoiceSearch";
-import { ACCENTS, LISTENING_COLOR } from "@/lib/accent";
+import { ACCENT, LISTENING_COLOR } from "@/lib/accent";
 import { DURATION, PRESS_SCALE, enter, exit } from "@/lib/motion";
 import { formatCount, sectionItems } from "@/data/menu";
 
@@ -29,7 +30,7 @@ const LIST_HEIGHT_RATIO = 0.55;
 export default function MenuIndexSheet({
   visible,
   sections,
-  accent = ACCENTS.default,
+  accent = ACCENT,
   vegOnly = false,
   query,
   onChangeQuery,
@@ -93,7 +94,7 @@ export default function MenuIndexSheet({
               value={query}
               onChangeText={onChangeQuery}
               placeholder={placeholder}
-              placeholderTextColor="#999999"
+              placeholderTextColor={colors.muted.placeholder}
               returnKeyType="search"
               className="h-full flex-1 px-4 font-jakarta-medium text-[16px] text-foreground"
               accessibilityLabel="Search in menu"

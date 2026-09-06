@@ -2,7 +2,7 @@ import { Pressable, View } from "react-native";
 import { Gift, ShoppingBag, Utensils } from "lucide-react-native";
 
 import Text from "@/components/ui/Text";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { cn } from "@/lib/utils";
 
 // Figma "category-switcher/row" (450:430). The gift tile is documented in Figma
@@ -13,9 +13,7 @@ const TABS = [
   { key: "bags", label: "Bags", Icon: ShoppingBag },
 ];
 
-export default function CategorySwitcher({ value = "food", onChange, vegOnly }) {
-  const accent = accentFor(vegOnly);
-
+export default function CategorySwitcher({ value = "food", onChange }) {
   return (
     <View className="h-[60px] w-full flex-row gap-4">
       {TABS.map(({ key, label, Icon }) => {
@@ -31,9 +29,9 @@ export default function CategorySwitcher({ value = "food", onChange, vegOnly }) 
               "flex-1 items-center justify-center gap-1 rounded-2xl px-1 py-2",
               !active && "border border-border bg-card",
             )}
-            style={{ backgroundColor: active ? accent.ribbon : undefined }}
+            style={{ backgroundColor: active ? ACCENT.ribbon : undefined }}
           >
-            <Icon size={24} color={active ? "#FFFFFF" : accent.ribbon} />
+            <Icon size={24} color={active ? "#FFFFFF" : ACCENT.ribbon} />
             <Text
               numberOfLines={1}
               className={cn(

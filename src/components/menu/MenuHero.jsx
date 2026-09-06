@@ -2,6 +2,7 @@ import { Image, Pressable, TextInput, View } from "react-native";
 import { Heart, Search, Share2, Utensils, X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { colors } from "@/lib/tokens";
 import BackButton from "@/components/customer/BackButton";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
@@ -58,7 +59,7 @@ export default function MenuHero({
               onChangeText={onChangeQuery}
               autoFocus
               placeholder={placeholder}
-              placeholderTextColor="#999999"
+              placeholderTextColor={colors.muted.placeholder}
               returnKeyType="search"
               className="h-full flex-1 px-3 font-jakarta-semibold text-[14px] text-foreground"
               accessibilityLabel={placeholder}
@@ -74,7 +75,7 @@ export default function MenuHero({
                 numberOfLines={1}
                 className={cn(
                   "font-jakarta-semibold text-[14px]",
-                  query ? "text-[#666666]" : "text-[#999999]",
+                  query ? "text-muted-foreground" : "text-muted-placeholder",
                 )}
               >
                 {query || placeholder}
@@ -89,7 +90,7 @@ export default function MenuHero({
               accessibilityRole="button"
               accessibilityLabel="Clear menu search"
             >
-              <X size={18} color="#666666" />
+              <X size={18} color={colors.muted.foreground} />
             </Pressable>
           ) : null}
         </View>
@@ -102,7 +103,7 @@ export default function MenuHero({
             accessibilityState={{ selected: favourite }}
             accessibilityLabel={favourite ? "Remove from favourites" : "Save to favourites"}
           >
-            <Heart size={20} color={favourite ? "#E23744" : "#1A1A1A"} fill={favourite ? "#E23744" : "transparent"} />
+            <Heart size={20} color={favourite ? "#E23744" : colors.foreground} fill={favourite ? "#E23744" : "transparent"} />
           </Pressable>
         ) : null}
 
@@ -112,7 +113,7 @@ export default function MenuHero({
           accessibilityRole="button"
           accessibilityLabel="Share this restaurant"
         >
-          <Share2 size={20} color="#1A1A1A" />
+          <Share2 size={20} color={colors.foreground} />
         </Pressable>
       </View>
     </View>

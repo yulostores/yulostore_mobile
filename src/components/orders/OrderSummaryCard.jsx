@@ -1,6 +1,7 @@
 import { View } from "react-native";
 import { HandPlatter, Soup, Utensils } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import Card from "@/components/ui/Card";
 import Text from "@/components/ui/Text";
 import { formatPrice } from "@/data/menu";
@@ -9,7 +10,7 @@ import { formatTotal, lineIsVeg, lineName } from "@/data/orders";
 const GLYPHS = { bowl: Soup, platter: HandPlatter };
 
 const GLYPH_TILE = "#FDECE4";
-const VEG_INK = "#2E7D32";
+const VEG_INK = colors.veg.DEFAULT;
 
 const TILE_SIZE = 40;
 

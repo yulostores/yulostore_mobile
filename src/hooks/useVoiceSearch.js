@@ -1,8 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 
 import { SpeechRecognition } from "@/lib/nativeModules";
-import { useFeature } from "@/context/FeatureFlagsContext";
-import { explainFeature } from "@/lib/features";
+import { explainFeature, feature as featureState } from "@/lib/features";
 
 // Every mic button in the app (the search screen, the menu index sheet) wraps
 // the platform recognizer the same way: ask for the mic once, stream interim
@@ -26,8 +25,8 @@ const noopSubscribe = () => {};
 const useRecognitionEvent = SpeechRecognition?.useSpeechRecognitionEvent ?? noopSubscribe;
 
 export default function useVoiceSearch({ onResult, lang = "en-US" } = {}) {
-  const feature = useFeature("voiceSearch");
-  const available = !!feature?.enabled;
+  const feature = featureState("voiceSearch");
+  const available = feature.enabled;
 
   const [listening, setListening] = useState(false);
   const [error, setError] = useState(null);

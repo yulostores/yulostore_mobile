@@ -1,18 +1,19 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, View } from "react-native";
+import { Alert, ScrollView, View } from "react-native";
 import { Check, Truck } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useFeed } from "@/context/FeedContext";
+import { colors } from "@/lib/tokens";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Screen from "@/components/ui/Screen";
+import LoadingState from "@/components/ui/LoadingState";
 import Text from "@/components/ui/Text";
 import PageHeader from "@/components/customer/PageHeader";
 import DeliveryTimeline from "@/components/orders/DeliveryTimeline";
 import RatingCard from "@/components/orders/RatingCard";
 import { formatTotal } from "@/data/orders";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import {
   useOrderDetails,
   useReorder,
@@ -41,8 +42,6 @@ const STATUS_LABELS = {
 // unconditionally, which told a customer their food had arrived while it was
 // still being cooked.
 export default function OrderDetails({ navigation, route }) {
-  const { vegOnly } = useFeed();
-  const accent = accentFor(vegOnly);
   const insets = useSafeAreaInsets();
 
   const orderId = route.params?.orderId;
@@ -68,7 +67,7 @@ export default function OrderDetails({ navigation, route }) {
       <Screen edges={["top"]}>
         <PageHeader title="Order details" />
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={accent.icon} />
+          <LoadingState />
         </View>
       </Screen>
     );
@@ -152,13 +151,13 @@ export default function OrderDetails({ navigation, route }) {
             className={`w-full rounded-[20px] px-5 py-4 ${isCancelled ? "bg-muted" : "bg-success-tint"}`}
           >
             {isDelivered ? (
-              <Check size={26} color="#2E7D32" strokeWidth={2.6} />
+              <Check size={26} color={colors.veg.DEFAULT} strokeWidth={2.6} />
             ) : (
-              <Truck size={26} color={isCancelled ? "#666666" : "#2E7D32"} strokeWidth={2.4} />
+              <Truck size={26} color={isCancelled ? colors.muted.foreground : colors.veg.DEFAULT} strokeWidth={2.4} />
             )}
 
             <Text
-              style={{ color: isCancelled ? "#666666" : "#2E7D32" }}
+              style={{ color: isCancelled ? colors.muted.foreground : colors.veg.DEFAULT }}
               className="mt-2 font-jakarta-bold text-[22px] leading-[30px]"
             >
               {STATUS_LABELS[order.status] ?? "In progress"}
@@ -178,7 +177,7 @@ export default function OrderDetails({ navigation, route }) {
               <Button
                 onPress={() => navigation.navigate("Tracking", { orderId })}
                 size="lg"
-                style={{ backgroundColor: accent.icon }}
+                style={{ backgroundColor: ACCENT.icon }}
                 className="w-full"
               >
                 <Text className="font-jakarta-bold text-[17px] leading-[24px] text-white">
@@ -215,7 +214,7 @@ export default function OrderDetails({ navigation, route }) {
             <RatingCard
               rating={rating}
               submitted={submitted}
-              accent={accent}
+              accent={ACCENT}
               note={
                 order.vegFleetOptIn
                   ? "Your delivery partner used the veg-only fleet bag for this order"
@@ -239,12 +238,12 @@ export default function OrderDetails({ navigation, route }) {
             onPress={handleReorder}
             variant="secondary"
             size="lg"
-            style={{ borderColor: accent.icon }}
+            style={{ borderColor: ACCENT.icon }}
             className="mt-3 w-full"
             accessibilityLabel={`Reorder from ${restaurantName}`}
             disabled={reorder.isPending}
           >
-            <Text style={{ color: accent.icon }} className="font-jakarta-bold text-[17px] leading-[24px]">
+            <Text style={{ color: ACCENT.icon }} className="font-jakarta-bold text-[17px] leading-[24px]">
               {reorder.isPending ? "Adding to cart…" : "Reorder"}
             </Text>
           </Button>

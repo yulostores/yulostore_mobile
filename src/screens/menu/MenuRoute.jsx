@@ -1,6 +1,7 @@
-import { ActivityIndicator, View } from "react-native";
+import { View } from "react-native";
 
 import Screen from "@/components/ui/Screen";
+import LoadingState from "@/components/ui/LoadingState";
 import Text from "@/components/ui/Text";
 import Menu from "@/screens/menu/Menu";
 import { LAYOUTS } from "@/data/menu";
@@ -36,7 +37,7 @@ export default function MenuRoute({ navigation, route }) {
     return (
       <Screen edges={["top", "bottom"]}>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#FF5E00" />
+          <LoadingState />
         </View>
       </Screen>
     );

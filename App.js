@@ -1,5 +1,9 @@
 import "./global.css";
 
+// Side effect only: registers every Reanimated component with NativeWind so
+// `className` works on them. Must run before the first render — see the module.
+import "@/lib/animated";
+
 // Imported for its side effect, and deliberately first: evaluating this module starts
 // the launch bootstrap — the cached profile, address and veg-mode read, then
 // POST /auth/refresh, then a prefetch of the home feed — at module-evaluation time,
@@ -18,10 +22,10 @@ import { QueryClientProvider } from "@tanstack/react-query";
 
 import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { CustomerAuthProvider } from "@/context/CustomerAuthContext";
-import { FeatureFlagsProvider } from "@/context/FeatureFlagsContext";
 import { FeedProvider } from "@/context/FeedContext";
 import { FontsProvider } from "@/context/FontsContext";
 import { SocketProvider } from "@/context/SocketContext";
+import { ToastProvider } from "@/context/ToastContext";
 import RootNavigator from "@/navigation/RootNavigator";
 import { useAppFonts } from "@/hooks/useAppFonts";
 import { useOtaUpdates } from "@/hooks/useOtaUpdates";
@@ -74,20 +78,24 @@ export default function App() {
             and the font state the `Text` it is built from depends on. */}
         <FontsProvider loaded={fontsLoaded}>
           <ErrorBoundary>
-            <FeatureFlagsProvider>
-              <QueryClientProvider client={queryClient}>
-                <CustomerAuthProvider>
-                  <SocketProvider>
-                    <FeedProvider>
+            <QueryClientProvider client={queryClient}>
+              <CustomerAuthProvider>
+                <SocketProvider>
+                  <FeedProvider>
+                    {/* Above the navigator, so the one toast host is a sibling
+                        of whatever screen is showing rather than something each
+                        screen has to mount for itself. Inside SafeAreaProvider,
+                        because the bar hangs off the top inset. */}
+                    <ToastProvider>
                       <NavigationContainer>
                         <StatusBar style="dark" />
                         <RootNavigator />
                       </NavigationContainer>
-                    </FeedProvider>
-                  </SocketProvider>
-                </CustomerAuthProvider>
-              </QueryClientProvider>
-            </FeatureFlagsProvider>
+                    </ToastProvider>
+                  </FeedProvider>
+                </SocketProvider>
+              </CustomerAuthProvider>
+            </QueryClientProvider>
           </ErrorBoundary>
         </FontsProvider>
       </SafeAreaProvider>

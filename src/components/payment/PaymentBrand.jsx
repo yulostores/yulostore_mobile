@@ -1,6 +1,7 @@
 import { View } from "react-native";
 import { Banknote, CreditCard, Landmark } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
 
@@ -54,7 +55,7 @@ export default function PaymentBrand({ brand }) {
     case "cred":
       return (
         <Tile className="border border-border bg-white">
-          <View className="h-2 w-3.5 rounded-b-[3px] border-x border-b border-[#1A1A1A]" />
+          <View className="h-2 w-3.5 rounded-b-[3px] border-x border-b border-foreground" />
           <Text className="mt-0.5 font-jakarta-bold text-[7px] leading-[9px] tracking-[0.5px] text-foreground">
             CRED
           </Text>
@@ -64,14 +65,14 @@ export default function PaymentBrand({ brand }) {
     case "bank":
       return (
         <View className={PLAIN}>
-          <Landmark size={24} color="#1A1A1A" strokeWidth={1.8} />
+          <Landmark size={24} color={colors.foreground} strokeWidth={1.8} />
         </View>
       );
 
     case "cod":
       return (
         <View className={PLAIN}>
-          <Banknote size={24} color="#1A1A1A" strokeWidth={1.8} />
+          <Banknote size={24} color={colors.foreground} strokeWidth={1.8} />
         </View>
       );
 
@@ -79,7 +80,7 @@ export default function PaymentBrand({ brand }) {
     default:
       return (
         <View className={PLAIN}>
-          <CreditCard size={24} color="#1A1A1A" strokeWidth={1.8} />
+          <CreditCard size={24} color={colors.foreground} strokeWidth={1.8} />
         </View>
       );
   }

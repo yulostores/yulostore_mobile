@@ -1,9 +1,10 @@
 import { Pressable, View } from "react-native";
 
+import { colors } from "@/lib/tokens";
 import Card from "@/components/ui/Card";
 import Text from "@/components/ui/Text";
 import { formatPrice } from "@/data/menu";
-import { ACCENTS } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { cn } from "@/lib/utils";
 
 function Row({ label, value, tone = "muted", className }) {
@@ -38,15 +39,16 @@ function Row({ label, value, tone = "muted", className }) {
   );
 }
 
-// The one bill both the cart and checkout print. Every figure comes from
-// `billFor`, so the cart's "to pay" and the checkout's "pay" button can't
-// disagree — they're the same number rendered twice.
+// The one bill both the cart and checkout print. Every figure comes from the
+// server's `GET /cart` bill, reshaped once in `useCart`, so the cart's "to pay"
+// and the checkout's "pay" button can't disagree — they're the same number
+// rendered twice.
 //
 // The tip row appears only where a tip can actually be left: checkout. The cart
 // is a review of the food, not the place to settle up.
 export default function BillDetails({
   bill,
-  accent = ACCENTS.default,
+  accent = ACCENT,
   title = "Bill details",
   totalLabel = "To pay",
   onAddTip,
@@ -64,7 +66,7 @@ export default function BillDetails({
           className="mt-3"
           label={
             <Text
-              style={{ color: "#1B5E20" }}
+              style={{ color: colors.veg.ink }}
               className="font-jakarta-medium text-[16px] leading-[22px]"
             >
               {discount.label}
@@ -72,7 +74,7 @@ export default function BillDetails({
           }
           value={
             <Text
-              style={{ color: "#1B5E20" }}
+              style={{ color: colors.veg.ink }}
               className="font-jakarta-semibold text-[16px] leading-[22px]"
             >
               − {formatPrice(discount.amount)}

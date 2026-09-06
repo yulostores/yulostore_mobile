@@ -2,6 +2,9 @@ import { useState } from "react";
 import { KeyboardAvoidingView, ScrollView, TextInput, View } from "react-native";
 import { Phone } from "lucide-react-native";
 
+import { useNavigation } from "@react-navigation/native";
+
+import { colors } from "@/lib/tokens";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
@@ -12,7 +15,8 @@ import { describeError } from "@/lib/apiErrors";
 const COUNTRY_CODE = "+91";
 const PHONE_LENGTH = 10;
 
-export default function PhoneLogin({ onNext }) {
+export default function PhoneLogin() {
+  const navigation = useNavigation();
   const { requestOtp, loading } = useCustomerAuth();
   const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
@@ -28,7 +32,7 @@ export default function PhoneLogin({ onNext }) {
       // The +91 stays on the label because that's what the customer is dialling
       // under, not part of the value.
       await requestOtp(phone);
-      onNext();
+      navigation.navigate("Otp");
     } catch (requestError) {
       // Every failure mode gets its own wording — rate limit, SMS provider down, gateway
       // timeout, no connection — instead of one message that fits none of them. See
@@ -75,7 +79,7 @@ export default function PhoneLogin({ onNext }) {
             </Text>
 
             <View className="mt-8 h-12 w-full flex-row items-center gap-2 rounded-full border border-border bg-white px-4">
-              <Phone size={18} color="#999999" />
+              <Phone size={18} color={colors.muted.placeholder} />
               <Text className="font-jakarta-semibold text-[16px] text-foreground">{COUNTRY_CODE}</Text>
               <View className="h-5 w-px bg-border" />
               <TextInput
@@ -86,7 +90,7 @@ export default function PhoneLogin({ onNext }) {
                 }}
                 keyboardType="number-pad"
                 placeholder="98765 43210"
-                placeholderTextColor="#999999"
+                placeholderTextColor={colors.muted.placeholder}
                 maxLength={PHONE_LENGTH}
                 autoFocus
                 className="flex-1 font-jakarta text-[16px] text-foreground"

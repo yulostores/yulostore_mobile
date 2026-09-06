@@ -2,11 +2,11 @@ import { View } from "react-native";
 import { Check, Leaf } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useFeed } from "@/context/FeedContext";
+import { colors } from "@/lib/tokens";
 import Button from "@/components/ui/Button";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 
 // Figma "Order placed". The one screen in the flow with nothing to answer: the
 // money has gone, the kitchen has the order, and the only thing left to do is
@@ -16,8 +16,6 @@ import { accentFor } from "@/lib/accent";
 // The tick is green whatever accent the app is wearing. It isn't the brand
 // speaking, it's the outcome — the same mark a non-veg order gets.
 export default function OrderPlaced({ navigation, route }) {
-  const { vegOnly } = useFeed();
-  const accent = accentFor(vegOnly);
   const insets = useSafeAreaInsets();
 
   const restaurantName = route.params?.restaurantName;
@@ -41,8 +39,8 @@ export default function OrderPlaced({ navigation, route }) {
   return (
     <Screen edges={["top"]}>
       <View className="flex-1 items-center justify-center px-8">
-        <View className="size-24 items-center justify-center rounded-full bg-[#E4F1E5]">
-          <Check size={44} color="#2E7D32" strokeWidth={2.6} />
+        <View className="size-24 items-center justify-center rounded-full bg-veg-tint">
+          <Check size={44} color={colors.veg.DEFAULT} strokeWidth={2.6} />
         </View>
 
         <Text className="mt-7 font-jakarta-extrabold text-[32px] leading-[40px] text-foreground">
@@ -54,10 +52,10 @@ export default function OrderPlaced({ navigation, route }) {
         </Text>
 
         {vegFleet ? (
-          <View className="mt-6 flex-row items-center gap-2.5 rounded-full bg-[#E4F1E5] px-5 py-3">
-            <Leaf size={18} color="#2E7D32" strokeWidth={2.2} />
+          <View className="mt-6 flex-row items-center gap-2.5 rounded-full bg-veg-tint px-5 py-3">
+            <Leaf size={18} color={colors.veg.DEFAULT} strokeWidth={2.2} />
 
-            <Text className="font-jakarta-semibold text-[16px] leading-[22px] text-[#2E7D32]">
+            <Text className="font-jakarta-semibold text-[16px] leading-[22px] text-veg">
               Veg-only fleet requested for this order
             </Text>
           </View>
@@ -68,7 +66,7 @@ export default function OrderPlaced({ navigation, route }) {
         <Button
           onPress={track}
           size="lg"
-          style={{ backgroundColor: accent.icon }}
+          style={{ backgroundColor: ACCENT.icon }}
           className="w-full shadow-lg shadow-black/20"
         >
           <Text className="font-jakarta-bold text-[17px] leading-[24px] text-white">

@@ -1,6 +1,7 @@
 import { Pressable, View } from "react-native";
 import { Leaf } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Text from "@/components/ui/Text";
@@ -43,8 +44,8 @@ export default function OrderHistoryCard({ order, accent, onPress, onReorder }) 
             {order.vegFleet ? (
               <>
                 <View className="size-[3px] rounded-full bg-muted-foreground" />
-                <Leaf size={12} color="#2E7D32" strokeWidth={2.2} />
-                <Text className="font-jakarta-medium text-[12px] leading-[16px] text-[#2E7D32]">
+                <Leaf size={12} color={colors.veg.DEFAULT} strokeWidth={2.2} />
+                <Text className="font-jakarta-medium text-[12px] leading-[16px] text-veg">
                   Veg-only fleet
                 </Text>
               </>

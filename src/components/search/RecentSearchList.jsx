@@ -1,6 +1,7 @@
 import { Pressable, View } from "react-native";
 import { Clock } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import Text from "@/components/ui/Text";
 
 // Figma "09 · Search — empty state". Terms only, no thumbnails: a recent search
@@ -16,7 +17,7 @@ export default function RecentSearchList({ items, onSelect }) {
           accessibilityRole="button"
           accessibilityLabel={`Search again for ${term}`}
         >
-          <Clock size={20} color="#666666" />
+          <Clock size={20} color={colors.muted.foreground} />
           <Text className="flex-1 font-jakarta-medium text-[16px] leading-[22px] text-foreground">
             {term}
           </Text>

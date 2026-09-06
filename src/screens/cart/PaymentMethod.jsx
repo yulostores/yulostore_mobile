@@ -7,11 +7,11 @@ import PressableScale from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
 import PaymentBrand from "@/components/payment/PaymentBrand";
 import { PAYMENT_GROUPS } from "@/data/payment";
-import { ACCENTS } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { PRESS_SCALE } from "@/lib/motion";
 
 export default function PaymentMethod({ route, navigation }) {
-  const { value, accent = ACCENTS.default } = route.params || {};
+  const { value, accent = ACCENT } = route.params || {};
   const insets = useSafeAreaInsets();
 
   const handleSelect = (id) => {

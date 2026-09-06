@@ -1,21 +1,19 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, ScrollView, Switch, View } from "react-native";
+import { Alert, ScrollView, Switch, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useFeed } from "@/context/FeedContext";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Screen from "@/components/ui/Screen";
+import LoadingState from "@/components/ui/LoadingState";
 import Text from "@/components/ui/Text";
 import PageHeader from "@/components/customer/PageHeader";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { usePreferences, useUpdatePreferences } from "@/hooks/useUser";
 
 const SCROLL_PADDING = 120;
 
 export default function VegFleetPreference({ navigation }) {
-  const { vegOnly } = useFeed();
-  const accent = accentFor(vegOnly);
   const insets = useSafeAreaInsets();
   
   const { data: preferences, isLoading } = usePreferences();
@@ -62,7 +60,7 @@ export default function VegFleetPreference({ navigation }) {
 
         <View className="mt-5 gap-3 px-5">
           {isLoading ? (
-            <ActivityIndicator size="large" color={accent.icon} className="mt-10" />
+            <LoadingState className="mt-10" />
           ) : (
             <Card className="w-full p-4">
               <View className="flex-row items-center justify-between gap-3">
@@ -73,7 +71,7 @@ export default function VegFleetPreference({ navigation }) {
                 <Switch
                   value={fleetPref}
                   onValueChange={change}
-                  trackColor={{ false: "#D4D4D4", true: accent.icon }}
+                  trackColor={{ false: "#D4D4D4", true: ACCENT.icon }}
                   thumbColor="#FFFFFF"
                   ios_backgroundColor="#D4D4D4"
                 />
@@ -95,7 +93,7 @@ export default function VegFleetPreference({ navigation }) {
           onPress={save}
           size="lg"
           disabled={saved}
-          style={{ backgroundColor: accent.icon, opacity: saved ? 0.45 : 1 }}
+          style={{ backgroundColor: ACCENT.icon, opacity: saved ? 0.45 : 1 }}
           className="w-full"
         >
           <Text className="font-jakarta-bold text-[17px] leading-[24px] text-white">

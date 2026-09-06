@@ -25,9 +25,11 @@ import { sectionItems } from "@/data/menu";
 //   { type: "collapsed", sections }            grid, a run of folded sections as one card
 //   { type: "empty" }                          nothing matched the search/filter
 //
-// `anchors` lists the section (or group) ids a row is the jump target for, and
-// `sectionId` names the section a row belongs to, which is what the rail reads
-// to highlight the section being scrolled through.
+// `anchors` lists the section (or group) ids a row is the jump target for.
+// Compact rows also carry `sectionIndex`, the position of the section they
+// belong to in the rail — the screen reads it off whichever row is topmost on
+// screen to decide which tab is lit, so the rail no longer needs every section
+// to have measured and reported its `y`.
 
 // Two dishes to a row, matching the design's grid. A trailing odd item keeps its
 // half of the row rather than stretching across it, so every card in the section
@@ -99,12 +101,13 @@ export function compactRows(sections) {
     return rows;
   }
 
-  for (const section of sections) {
+  sections.forEach((section, sectionIndex) => {
     rows.push({
       type: "sectionTitle",
       key: `section:${section.id}`,
       anchors: [section.id],
       sectionId: section.id,
+      sectionIndex,
       title: section.title,
       itemCount: sectionItems(section).length,
     });
@@ -120,6 +123,7 @@ export function compactRows(sections) {
           key: `group:${group.id}`,
           anchors: [group.id],
           sectionId: section.id,
+          sectionIndex,
           title: group.title,
         });
       }
@@ -129,12 +133,13 @@ export function compactRows(sections) {
           type: "item",
           key: `item:${section.id}:${item.id}`,
           sectionId: section.id,
+          sectionIndex,
           item,
           first: index === 0,
         });
       });
     }
-  }
+  });
 
   return rows;
 }

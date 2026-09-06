@@ -28,6 +28,20 @@ function notifySessionExpired() {
   _sessionExpiredHandlers.forEach((handler) => handler());
 }
 
+// Reads used to sit on the same 20s ceiling as everything else. Combined with the
+// retry policy in queryClient.js — two attempts, exponential backoff — an
+// unreachable server could hold a screen on a spinner for the better part of a
+// minute before the first word of an error reached the customer. Ten seconds is
+// past the tail of any healthy request on a bad mobile connection, and it makes
+// the whole retry budget land inside about half a minute instead.
+export const READ_TIMEOUT = 10000;
+
+// Placing an order and verifying a payment are the two calls where giving up
+// early is worse than waiting: the server may already be committing the order,
+// and a client-side timeout tells the customer nothing about whether it took.
+// These pass the longer ceiling explicitly per request.
+export const CHECKOUT_TIMEOUT = 30000;
+
 // `withCredentials` is what carries the refreshToken cookie the server sets on OTP
 // verify. React Native's networking layer persists cookies natively (NSHTTPCookieStorage
 // / OkHttp's cookie jar), so the cookie survives an app restart the same way it would
@@ -35,7 +49,7 @@ function notifySessionExpired() {
 const client = axios.create({
   baseURL: `${API_BASE}/api`,
   withCredentials: true,
-  timeout: 20000,
+  timeout: READ_TIMEOUT,
 });
 
 client.interceptors.request.use((config) => {
@@ -49,7 +63,7 @@ client.interceptors.request.use((config) => {
 const refreshClient = axios.create({
   baseURL: `${API_BASE}/api`,
   withCredentials: true,
-  timeout: 20000,
+  timeout: READ_TIMEOUT,
 });
 
 // Exported so the auth context can re-establish a session at app launch — the access
@@ -137,7 +151,7 @@ client.interceptors.response.use(
 // lib/apiErrors.js turns into customer-facing wording.
 //
 // Three failures used to arrive here indistinguishable from one another and all came out
-// as "Check your connection": a genuinely offline device, a request that hit the 20s
+// as "Check your connection": a genuinely offline device, a request that hit the read
 // timeout, and a gateway that gave up on a slow upstream (a 502/504 with an HTML body).
 // The first is the customer's to fix; the other two are ours, and telling them to check
 // their Wi-Fi sent them looking in the wrong place.

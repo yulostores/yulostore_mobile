@@ -12,11 +12,12 @@ import {
 import { Send } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { colors } from "@/lib/tokens";
 import Screen from "@/components/ui/Screen";
+import LoadingState from "@/components/ui/LoadingState";
 import Text from "@/components/ui/Text";
 import PageHeader from "@/components/customer/PageHeader";
-import { useFeed } from "@/context/FeedContext";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { useSupportTicket, useCreateSupportTicket, useReplyToTicket } from "@/hooks/useSupport";
 
 // Maps topics to API categories
@@ -31,8 +32,6 @@ const TOPIC_TO_CATEGORY = {
 export default function SupportThread({ route }) {
   const { topic, orderId, ticketId: initialTicketId } = route.params || {};
   
-  const { vegOnly } = useFeed();
-  const accent = accentFor(vegOnly);
   const insets = useSafeAreaInsets();
   const scrollViewRef = useRef(null);
 
@@ -89,8 +88,8 @@ export default function SupportThread({ route }) {
           size="sm"
           align="center"
           backStyle="circle"
-          iconColor={accent.icon}
-          circleColor={accent.tint}
+          iconColor={ACCENT.icon}
+          circleColor={ACCENT.tint}
           className="pb-4"
         />
 
@@ -110,12 +109,12 @@ export default function SupportThread({ route }) {
           )}
 
           {isLoading && ticketId ? (
-            <ActivityIndicator size="large" color={accent.icon} className="mt-10" />
+            <LoadingState className="mt-10" />
           ) : (
             <View className="gap-4">
               {/* If we have a ticket description but it's not in the messages array, show it first */}
               {ticket?.description && !messages.find(m => m.text === ticket.description) && (
-                 <View className="self-end rounded-2xl bg-primary px-4 py-3 max-w-[80%]" style={{ backgroundColor: accent.icon }}>
+                 <View className="self-end rounded-2xl bg-primary px-4 py-3 max-w-[80%]" style={{ backgroundColor: ACCENT.icon }}>
                    <Text className="font-jakarta text-[15px] leading-[22px] text-white">
                      {ticket.description}
                    </Text>
@@ -132,7 +131,7 @@ export default function SupportThread({ route }) {
                     className={`rounded-2xl px-4 py-3 max-w-[80%] ${
                       isCustomer ? "self-end" : "self-start bg-muted"
                     }`}
-                    style={isCustomer ? { backgroundColor: accent.icon } : {}}
+                    style={isCustomer ? { backgroundColor: ACCENT.icon } : {}}
                   >
                     <Text
                       className={`font-jakarta text-[15px] leading-[22px] ${
@@ -156,7 +155,7 @@ export default function SupportThread({ route }) {
             value={inputText}
             onChangeText={setInputText}
             placeholder="Type your message..."
-            placeholderTextColor="#999999"
+            placeholderTextColor={colors.muted.placeholder}
             className="flex-1 rounded-full bg-muted px-5 py-3 font-jakarta text-[16px] text-foreground"
             multiline
             maxLength={500}
@@ -165,7 +164,7 @@ export default function SupportThread({ route }) {
             onPress={handleSend}
             disabled={!inputText.trim() || isSending}
             className="size-12 items-center justify-center rounded-full"
-            style={{ backgroundColor: inputText.trim() && !isSending ? accent.icon : "#E5E5E5" }}
+            style={{ backgroundColor: inputText.trim() && !isSending ? ACCENT.icon : "#E5E5E5" }}
           >
             {isSending ? (
               <ActivityIndicator size="small" color="#FFFFFF" />

@@ -13,11 +13,13 @@ import {
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { colors } from "@/lib/tokens";
 import { toDisplayAddress, useCustomerAuth } from "@/context/CustomerAuthContext";
-import { useFeed } from "@/context/FeedContext";
+import { useCartState } from "@/context/CartContext";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Screen from "@/components/ui/Screen";
+import LoadingState from "@/components/ui/LoadingState";
 import Text from "@/components/ui/Text";
 import AddressSheet from "@/components/checkout/AddressSheet";
 import BillDetails from "@/components/cart/BillDetails";
@@ -32,11 +34,11 @@ import { shortAddress } from "@/data/addresses";
 import { TIP_OPTIONS, cartLineFor } from "@/data/cart";
 import { formatPrice } from "@/data/menu";
 import { DEFAULT_METHOD_ID, apiMethodFor, findMethod } from "@/data/payment";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { cn } from "@/lib/utils";
 import { useCheckoutSummary, usePlaceOrder, useSimulatePayment, useVerifyPayment } from "@/hooks/useCheckout";
 import { RazorpayCancelledError, openRazorpayCheckout } from "@/lib/razorpay";
-import { formatImageUrl } from "@/api/config";
+import { mapItem } from "@/hooks/useRestaurantMenu";
 
 // Room under the pay bar, which is taller than a plain button — it carries the
 // payment method summary above it.
@@ -50,7 +52,7 @@ function Chip({ label, Icon, active, accent, onPress }) {
   return (
     <Pressable
       onPress={onPress}
-      style={active ? { borderColor: accent.icon, backgroundColor: accent.tint } : undefined}
+      style={active ? { borderColor: ACCENT.icon, backgroundColor: ACCENT.tint } : undefined}
       className={cn(
         "h-9 flex-row items-center gap-1.5 rounded-full border border-border bg-card px-3",
         active && "border",
@@ -59,9 +61,9 @@ function Chip({ label, Icon, active, accent, onPress }) {
       accessibilityState={{ selected: !!active }}
       accessibilityLabel={label}
     >
-      <Icon size={14} color={active ? accent.icon : "#666666"} />
+      <Icon size={14} color={active ? ACCENT.icon : colors.muted.foreground} />
       <Text
-        style={active ? { color: accent.icon } : undefined}
+        style={active ? { color: ACCENT.icon } : undefined}
         className={cn(
           "text-[13px] leading-[18px]",
           active ? "font-jakarta-semibold" : "font-jakarta-medium text-foreground",
@@ -85,12 +87,11 @@ const TIP_CHOICES = [
 // needs answering — quantities, address, notes, payment method — is editable
 // inline here, with a confirmation the only screen still ahead of it. Address
 // and payment method open a sheet rather than a full-screen navigation; the
-// bill is the same `billFor` shape the server's checkout summary already
-// returns, so this screen can't quote a different total than the one it charges.
+// bill is the same shape the server's checkout summary already returns, so this
+// screen can't quote a different total than the one it charges.
 export default function Cart({ route, navigation }) {
-  const { cart, cartLoading, setLineQuantity, addToCart, vegOnly } = useFeed();
+  const { cart, cartLoading, setLineQuantity, addToCart } = useCartState();
   const { addresses, selectedAddress, selectAddress, addAddress } = useCustomerAuth();
-  const accent = accentFor(vegOnly);
   const insets = useSafeAreaInsets();
 
   const [tip, setTip] = useState(0);
@@ -119,18 +120,16 @@ export default function Cart({ route, navigation }) {
   const simulatePayment = useSimulatePayment();
   const verifyPayment = useVerifyPayment();
 
-  const suggestions = useMemo(() => {
-    if (!summary?.upsellItems?.length) return [];
-    return summary.upsellItems.map((item) => ({
-      id: item._id,
-      name: item.name,
-      price: item.effectivePrice ?? item.sellingPrice,
-      veg: item.foodType === "veg",
-      // Server-relative upload paths can't be resolved by <Image source> on
-      // their own — same treatment every other image surface gives them.
-      image: item.image ? { uri: formatImageUrl(item.image) } : null,
-    }));
-  }, [summary]);
+  // The same `mapItem` the menu screen runs every dish through, not a
+  // hand-rolled subset of its fields: `upsellItems` are whole MenuItem documents
+  // off the cached menu, `optionGroups[]` included, and `mapItem` is what turns
+  // those into the `detail` / `customisation` shapes `addSuggestion` below
+  // branches on. Mapping only id/name/price/veg/image left both of those absent,
+  // so a dish with choices was added straight to the cart with its defaults.
+  const suggestions = useMemo(
+    () => (summary?.upsellItems ?? []).map(mapItem),
+    [summary],
+  );
 
   const header = <PageHeader title="Your cart" size="xl" />;
 
@@ -141,7 +140,7 @@ export default function Cart({ route, navigation }) {
       <Screen edges={["top", "bottom"]}>
         {header}
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={accent.icon} />
+          <LoadingState />
         </View>
       </Screen>
     );
@@ -156,7 +155,7 @@ export default function Cart({ route, navigation }) {
 
         <View className="flex-1 items-center justify-center gap-3 px-10">
           <View className="size-16 items-center justify-center rounded-full bg-muted">
-            <ShoppingBag size={26} color="#999999" />
+            <ShoppingBag size={26} color={colors.muted.placeholder} />
           </View>
 
           <Text className="font-jakarta-bold text-[18px] leading-[26px] text-foreground">
@@ -169,7 +168,7 @@ export default function Cart({ route, navigation }) {
 
           <Button
             onPress={() => navigation.navigate("Tabs", { screen: "Home" })}
-            style={{ backgroundColor: accent.icon }}
+            style={{ backgroundColor: ACCENT.icon }}
             className="mt-3"
           >
             Browse restaurants
@@ -416,7 +415,7 @@ export default function Cart({ route, navigation }) {
             deliveryAddress ? `Delivering to ${deliveryAddress.label}. Change address` : "Add a delivery address"
           }
         >
-          <MapPin size={18} color={accent.icon} strokeWidth={2.2} />
+          <MapPin size={18} color={ACCENT.icon} strokeWidth={2.2} />
 
           <View className="flex-1">
             <Text className="font-jakarta-bold text-[14px] leading-[20px] text-foreground">
@@ -431,7 +430,7 @@ export default function Cart({ route, navigation }) {
             </Text>
           </View>
 
-          <ChevronRight size={18} color="#666666" />
+          <ChevronRight size={18} color={colors.muted.foreground} />
         </Pressable>
 
         <Pressable
@@ -456,7 +455,7 @@ export default function Cart({ route, navigation }) {
 
               <CheckoutItemRow
                 line={line}
-                accent={accent}
+                accent={ACCENT}
                 onChangeQuantity={(quantity) => setLineQuantity(line.key, quantity)}
                 onEdit={() => editLine(line)}
               />
@@ -471,7 +470,7 @@ export default function Cart({ route, navigation }) {
           accessibilityRole="button"
           accessibilityLabel={`Add more items from ${cart.restaurantName}`}
         >
-          <Text style={{ color: accent.icon }} className="font-jakarta-bold text-[15px] leading-[21px]">
+          <Text style={{ color: ACCENT.icon }} className="font-jakarta-bold text-[15px] leading-[21px]">
             + Add more items
           </Text>
         </Pressable>
@@ -480,7 +479,7 @@ export default function Cart({ route, navigation }) {
           <Chip
             label="Cooking requests"
             Icon={NotepadText}
-            accent={accent}
+            accent={ACCENT}
             active={!!cookingNote}
             onPress={() => setSheet("cooking-note")}
           />
@@ -488,7 +487,7 @@ export default function Cart({ route, navigation }) {
           <Chip
             label="Extra Cutlery Needed"
             Icon={Utensils}
-            accent={accent}
+            accent={ACCENT}
             active={cutlery}
             onPress={() => setCutlery((current) => !current)}
           />
@@ -506,7 +505,7 @@ export default function Cart({ route, navigation }) {
               accessibilityState={{ checked: vegFleet }}
               accessibilityLabel="Request the veg-only delivery fleet"
             >
-              <Leaf size={18} color="#2E7D32" strokeWidth={2.2} />
+              <Leaf size={18} color={colors.veg.DEFAULT} strokeWidth={2.2} />
 
               <View className="flex-1">
                 <Text className="font-jakarta-bold text-[14px] leading-[19px] text-foreground">
@@ -519,7 +518,7 @@ export default function Cart({ route, navigation }) {
               </View>
 
               <View
-                style={vegFleet ? { borderColor: "#2E7D32", backgroundColor: "#2E7D32" } : undefined}
+                style={vegFleet ? { borderColor: colors.veg.DEFAULT, backgroundColor: colors.veg.DEFAULT } : undefined}
                 className="size-6 items-center justify-center rounded-full border-[1.5px] border-border-strong"
               >
                 {vegFleet ? <Check size={14} color="#FFFFFF" strokeWidth={3} /> : null}
@@ -533,7 +532,7 @@ export default function Cart({ route, navigation }) {
               accessibilityRole="button"
               accessibilityLabel="What is the veg-only delivery fleet?"
             >
-              <Text className="font-jakarta-semibold text-[13px] leading-[19px] text-[#2E7D32]">
+              <Text className="font-jakarta-semibold text-[13px] leading-[19px] text-veg">
                 What's this?
               </Text>
             </Pressable>
@@ -554,7 +553,7 @@ export default function Cart({ route, navigation }) {
             >
               {suggestions.map((item) => (
                 <View key={item.id} style={{ width: SUGGESTION_WIDTH }}>
-                  <MenuItemCard item={item} accent={accent} onAdd={() => addSuggestion(item)} />
+                  <MenuItemCard item={item} accent={ACCENT} onAdd={() => addSuggestion(item)} />
                 </View>
               ))}
             </ScrollView>
@@ -563,12 +562,12 @@ export default function Cart({ route, navigation }) {
 
         {isLoadingSummary && !bill ? (
           <View className="mx-4 mt-5 h-[160px] items-center justify-center rounded-[20px] bg-card border border-black/[0.06]">
-            <ActivityIndicator color={accent.icon} />
+            <ActivityIndicator color={ACCENT.icon} />
           </View>
         ) : (
           <BillDetails
             bill={bill}
-            accent={accent}
+            accent={ACCENT}
             title="Bill Details"
             totalLabel="To Pay"
             className="mx-4 mt-5"
@@ -586,7 +585,7 @@ export default function Cart({ route, navigation }) {
         visible={sheet === "address"}
         addresses={addresses}
         selectedAddress={selectedAddress}
-        accent={accent}
+        accent={ACCENT}
         onSelect={chooseAddress}
         onAdd={addAddress}
         onDismiss={() => setSheet(null)}
@@ -597,7 +596,7 @@ export default function Cart({ route, navigation }) {
         title="Instructions for delivery partner"
         placeholder="e.g. Ring the bell twice, leave at the door"
         value={deliveryNote}
-        accent={accent}
+        accent={ACCENT}
         onSave={(note) => {
           setDeliveryNote(note);
           setSheet(null);
@@ -610,7 +609,7 @@ export default function Cart({ route, navigation }) {
         title="Cooking requests"
         placeholder="e.g. Less spicy, no onion"
         value={cookingNote}
-        accent={accent}
+        accent={ACCENT}
         onSave={(note) => {
           setCookingNote(note);
           setSheet(null);
@@ -623,7 +622,7 @@ export default function Cart({ route, navigation }) {
         title="Tip your delivery partner"
         options={TIP_CHOICES}
         value={String(tip)}
-        accent={accent}
+        accent={ACCENT}
         onSelect={(id) => {
           setTip(Number(id));
           setSheet(null);
@@ -633,13 +632,13 @@ export default function Cart({ route, navigation }) {
 
       <VegFleetSheet
         visible={sheet === "veg-fleet"}
-        accent={accent}
+        accent={ACCENT}
         onDismiss={() => setSheet(null)}
       />
 
       <ItemCustomiseSheet
         item={customising?.item ?? null}
-        accent={accent}
+        accent={ACCENT}
         onAdd={addCustomised}
         onDismiss={() => setCustomising(null)}
       />
@@ -649,7 +648,7 @@ export default function Cart({ route, navigation }) {
         className="absolute inset-x-0 bottom-0 rounded-t-3xl bg-card px-6 pt-4 shadow-lg shadow-black/20"
       >
         <View className="flex-row items-center gap-2">
-          <Wallet size={14} color="#666666" />
+          <Wallet size={14} color={colors.muted.foreground} />
           <Text className="font-jakarta-medium text-[12px] leading-[17px] tracking-[0.5px] text-muted-foreground">
             PAY USING
           </Text>
@@ -667,7 +666,7 @@ export default function Cart({ route, navigation }) {
             </Text>
           </View>
 
-          <ChevronUp size={18} color="#1A1A1A" />
+          <ChevronUp size={18} color={colors.foreground} />
         </Pressable>
 
         <Button
@@ -678,7 +677,7 @@ export default function Cart({ route, navigation }) {
           // could otherwise both read the same cart and create two real orders
           // (Gotcha #7) — disabled on the first tap, not just styled as busy.
           disabled={!deliveryAddress || isPaying || isLoadingSummary}
-          style={deliveryAddress && !isLoadingSummary ? { backgroundColor: accent.icon } : undefined}
+          style={deliveryAddress && !isLoadingSummary ? { backgroundColor: ACCENT.icon } : undefined}
           className="mt-3 w-full shadow-lg shadow-black/20"
           accessibilityLabel={
             !deliveryAddress

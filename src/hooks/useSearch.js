@@ -29,15 +29,6 @@ export function useAddRecentSearch() {
   });
 }
 
-export function useRemoveRecentSearch() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id) => client.delete(`/search/recent/${id}`),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["recentSearches"] }),
-  });
-}
-
 export function usePopularSearches(vegOnly = false) {
   return useQuery({
     queryKey: ["popularSearches", vegOnly],
@@ -78,14 +69,5 @@ export function useSearchResults(query, filters = {}, vegOnly = false, deliveryL
     },
     select: (data) => data?.restaurants ?? [],
     enabled: !!query?.trim(),
-  });
-}
-
-export function useMenuSearch(restaurantId, query) {
-  return useQuery({
-    queryKey: ["menuSearch", restaurantId, query],
-    queryFn: () => client.get(`/restaurants/${restaurantId}/menu/search`, { params: { q: query } }),
-    select: (data) => data?.items ?? [],
-    enabled: !!query?.trim() && !!restaurantId,
   });
 }

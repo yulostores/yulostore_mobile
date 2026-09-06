@@ -2,7 +2,7 @@ import { View } from "react-native";
 import { ArrowLeft } from "lucide-react-native";
 import { useNavigation } from "@react-navigation/native";
 
-import useResponsive from "@/hooks/useResponsive";
+import { colors } from "@/lib/tokens";
 import PressableScale from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
 import { PRESS_SCALE } from "@/lib/motion";
@@ -33,7 +33,7 @@ export default function PageHeader({
   align = "start",
   variant = "inline",
   backStyle = "plain",
-  iconColor = "#1A1A1A",
+  iconColor = colors.foreground,
   circleColor,
   trailing,
   numberOfLines,
@@ -42,7 +42,6 @@ export default function PageHeader({
   className,
 }) {
   const navigation = useNavigation();
-  const { gutter } = useResponsive();
   const compact = size === "sm";
   const handleBack = onBack ?? (navigation.canGoBack() ? () => navigation.goBack() : null);
 
@@ -87,8 +86,7 @@ export default function PageHeader({
 
   return (
     <View
-      style={{ paddingHorizontal: gutter }}
-      className={cn("flex-row gap-4 pt-2", compact ? "items-center" : "items-start", className)}
+      className={cn("flex-row gap-4 px-6 pt-2", compact ? "items-center" : "items-start", className)}
     >
       {backElement}
       {title ? (

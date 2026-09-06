@@ -1,6 +1,7 @@
 import { Pressable, View } from "react-native";
 import { ChevronDown, ChevronUp } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import Text from "@/components/ui/Text";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +30,7 @@ export default function MenuSectionHeader({ title, itemCount, expanded, classNam
         <Text className="font-jakarta-medium text-[14px] leading-[20px] text-muted-foreground">
           {itemCount} {itemCount === 1 ? "item" : "items"}
         </Text>
-        <Chevron size={20} color="#1A1A1A" />
+        <Chevron size={20} color={colors.foreground} />
       </View>
     </Pressable>
   );

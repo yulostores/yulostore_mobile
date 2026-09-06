@@ -1,6 +1,7 @@
 import { isValidElement } from "react";
 import { cva } from "class-variance-authority";
 
+import { colors } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import PressableScale from "./PressableScale";
 import Text from "./Text";
@@ -8,7 +9,7 @@ import Text from "./Text";
 const containerVariants = cva("items-center justify-center rounded-full flex-row gap-2", {
   variants: {
     variant: {
-      default: "bg-primary", // Removed shadow utilities to prevent NativeWind crash
+      default: "bg-primary",
       secondary: "bg-white border-[1.5px] border-primary-hover",
       ghost: "bg-transparent",
       destructive: "bg-destructive",
@@ -41,22 +42,16 @@ const textVariants = cva("font-jakarta-semibold text-center", {
   defaultVariants: { variant: "default", size: "default" },
 });
 
-// Same colors as the Tailwind tokens above (hsl(var(--primary)) etc, see
-// global.css), duplicated here as inline styles. NativeWind resolves
-// `className` into RN styles at runtime, but PressableScale's container is a
-// Reanimated `Animated.createAnimatedComponent(Pressable)` registered via a
-// manual `cssInterop(..., { className: "style" })` — on native (not web,
-// which uses real CSS) that combination doesn't reliably repaint the
-// class-driven background/text colors when `variant`/`disabled` changes, so
-// the button can get stuck showing its initial color. `style` bypasses that
-// pipeline entirely — RN applies it directly — so it renders identically on
-// both platforms regardless of that bug.
-const VARIANT_COLORS = {
-  default: { bg: "#FF5E00", text: "#FFFFFF" },
-  secondary: { bg: "#FFFFFF", text: "#F05728", borderColor: "#F05728" },
-  ghost: { bg: "transparent", text: "#1A1A1A" },
-  destructive: { bg: "#E53734", text: "#FFFFFF" },
-  disabled: { bg: "#D6D6D6", text: "#666666" },
+// A drop shadow is the one thing the variants can't express as a class:
+// NativeWind's shadow utilities don't map onto RN's iOS shadow* / Android
+// elevation pair, so the primary button's glow is a style. Its colour still
+// comes from the same token the `bg-primary` class above resolves to.
+const PRIMARY_SHADOW = {
+  shadowColor: colors.primary.DEFAULT,
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.4,
+  shadowRadius: 6,
+  elevation: 5,
 };
 
 export default function Button({
@@ -67,10 +62,10 @@ export default function Button({
   className,
   textClassName,
   onPress,
+  style,
   ...props
 }) {
   const effectiveVariant = disabled && variant !== "disabled" ? "disabled" : variant;
-  const colors = VARIANT_COLORS[effectiveVariant ?? "default"];
 
   return (
     <PressableScale
@@ -84,21 +79,8 @@ export default function Button({
         disabled && "opacity-100",
         className,
       )}
-      style={[
-        {
-          backgroundColor: colors.bg,
-          ...(colors.borderColor ? { borderColor: colors.borderColor } : null),
-        },
-        effectiveVariant === "default" && {
-          shadowColor: "#FF5E00",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.4,
-          shadowRadius: 6,
-          elevation: 5
-        },
-        props.style
-      ]}
       {...props}
+      style={[effectiveVariant === "default" && PRIMARY_SHADOW, style]}
     >
       {isValidElement(children) ? (
         children
@@ -107,10 +89,7 @@ export default function Button({
         // which arrives as an array of nodes, not a single string) — RN
         // throws if a bare text node is a direct child of a View/Pressable,
         // so anything that isn't already a real element gets wrapped here.
-        <Text
-          className={cn(textVariants({ variant: effectiveVariant, size }), textClassName)}
-          style={{ color: colors.text }}
-        >
+        <Text className={cn(textVariants({ variant: effectiveVariant, size }), textClassName)}>
           {children}
         </Text>
       )}

@@ -2,35 +2,22 @@ import { useCallback, useEffect, useState } from "react";
 import { KeyboardAvoidingView, Modal, Pressable, useWindowDimensions, View } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { cssInterop } from "nativewind";
 import Animated, {
   runOnJS,
   useAnimatedStyle,
-  useReducedMotion,
   useSharedValue,
   withSpring,
-  withTiming,
 } from "react-native-reanimated";
 
-import { DURATION, SPRING } from "@/lib/motion";
+import { SCRIM, useOverlayProgress } from "./overlay";
+import { SPRING } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import useResponsive from "@/hooks/useResponsive";
 
-// Reanimated builds this component at runtime, so NativeWind's compiler can't
-// know it takes a `className` — without this, the scrim and panel below silently
-// drop every Tailwind class the moment they also get an animated `style` prop,
-// which is exactly what both of them are.
-cssInterop(Animated.View, { className: "style" });
-
-// `Modal animationType="slide"` moves the entire modal container, which on a
-// transparent modal means the dim backdrop slides up from the bottom with the
-// panel — the screen behind appears to be uncovered from the wrong direction.
-// A sheet should do two different things at once: the scrim fades in place
-// while the panel travels. That's the whole reason this exists.
-//
-// It also adds the thing customers reach for without being told: dragging the
-// handle down to dismiss. The gesture is bound to the header only, so a sheet
-// with a scrolling body doesn't fight its own list for the vertical drag.
+// `Modal animationType="slide"` moves the whole modal container, so on a
+// transparent modal the scrim would slide up with the panel instead of fading in
+// place. This sheet animates the two separately, and adds drag-to-dismiss — bound
+// to the header only, so a scrolling body doesn't fight the list for the drag.
 
 /** Past this much travel, releasing dismisses rather than snapping back. */
 const DISMISS_DISTANCE = 96;
@@ -57,46 +44,28 @@ export default function BottomSheet({
    */
   overlay,
   /** The scrim's opacity class, for sheets that need to stay readable behind. */
-  scrimClassName = "bg-black/50",
+  scrimClassName = SCRIM,
 }) {
   const insets = useSafeAreaInsets();
   const { contentWidth } = useResponsive();
   const { height: windowHeight } = useWindowDimensions();
-  const reduced = useReducedMotion();
-
-  // The modal has to outlive `visible` going false, or React unmounts the panel
-  // before it has had a chance to animate out.
-  const [mounted, setMounted] = useState(visible);
 
   // Until the panel has laid out we don't know how far "off the bottom" is, so
   // the first frame parks it a full screen down — further than it needs, never
   // visible in the wrong place.
   const [panelHeight, setPanelHeight] = useState(windowHeight);
 
-  // 0 = fully dismissed, 1 = fully open. Drives the scrim and the panel
-  // together so they can't drift apart.
-  const progress = useSharedValue(0);
+  // 0 = fully dismissed, 1 = fully open, and mounted past `visible` going false
+  // so the exit has something to animate. Shared with `ui/Dialog` so the app's
+  // two overlay shapes dim and settle identically — see `overlay.js`.
+  const { mounted, progress, reduced } = useOverlayProgress(visible, { spring: SPRING.sheet });
+
   // Live finger offset, kept separate so a drag doesn't fight the open spring.
   const drag = useSharedValue(0);
 
-  const unmount = useCallback(() => setMounted(false), []);
-
   useEffect(() => {
-    if (visible) {
-      setMounted(true);
-      drag.value = 0;
-      progress.value = reduced
-        ? withTiming(1, { duration: DURATION.fast })
-        : withSpring(1, SPRING.sheet);
-      return;
-    }
-
-    // Leaving is a timing, not a spring: an exit that overshoots keeps a
-    // dismissed surface on screen longer than the customer asked for.
-    progress.value = withTiming(0, { duration: DURATION.fast }, (finished) => {
-      if (finished) runOnJS(unmount)();
-    });
-  }, [visible, reduced, progress, drag, unmount]);
+    if (visible) drag.value = 0;
+  }, [visible, drag]);
 
   const close = useCallback(() => onDismiss?.(), [onDismiss]);
 
@@ -130,23 +99,13 @@ export default function BottomSheet({
 
   if (!mounted) return null;
 
-  // Always the same element type, whatever `keyboardAvoiding` is doing: a sheet
-  // that swaps its body (the address one turns into a form) would otherwise
-  // change the shell's type mid-life, and React tears down and remounts the
-  // whole subtree — the `Modal` included — when a component type changes.
-  // Without a `behavior`, KeyboardAvoidingView is a plain View.
+  // Always a KeyboardAvoidingView, even when it has no `behavior` (in which case
+  // it is a plain View): swapping the shell's component type mid-life would make
+  // React remount the whole subtree, `Modal` included.
   //
-  // "padding" on Android too, for the same reason as PhoneLogin, only more so.
-  // The old iOS-only branch left Android leaning on the window resizing itself
-  // for the keyboard, and this window never does: it belongs to a
-  // `statusBarTranslucent` Modal, which lays out beyond the window limits, and
-  // the app is edge-to-edge besides. So the keypad came up over the panel and
-  // covered the field being typed into and the button that saves it — the
-  // address form being the worst of them, since its Save sits below a
-  // multiline input. "padding" degrades safely if a device does still resize:
-  // RN measures the keyboard against this view's own frame, so a frame that
-  // already ends above the keyboard yields ~0 padding rather than
-  // double-counting it.
+  // "padding" on Android too. This window belongs to a `statusBarTranslucent`
+  // Modal in an edge-to-edge app, so it never resizes itself for the keyboard and
+  // the keypad would cover the field being typed into.
   const shellBehavior = keyboardAvoiding ? "padding" : undefined;
 
   return (

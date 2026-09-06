@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, View } from "react-native";
+import { Alert, Image, Pressable, ScrollView, View } from "react-native";
 import { ArrowRight, Heart, Utensils } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useFeed } from "@/context/FeedContext";
+import { useCartState } from "@/context/CartContext";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Screen from "@/components/ui/Screen";
+import LoadingState from "@/components/ui/LoadingState";
 import Text from "@/components/ui/Text";
 import DiscardCartDialog from "@/components/cart/DiscardCartDialog";
 import PageHeader from "@/components/customer/PageHeader";
@@ -14,7 +15,7 @@ import ItemChoiceCard from "@/components/menu/ItemChoiceCard";
 import QuantityStepper from "@/components/menu/QuantityStepper";
 import { cartLineFor } from "@/data/cart";
 import { defaultSelection, formatPrice, totalFor } from "@/data/menu";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import { useItemDetail } from "@/hooks/useRestaurantMenu";
 import { useToggleItemFavorite } from "@/hooks/useUser";
@@ -48,9 +49,8 @@ export default function ItemDetail({ navigation, route }) {
   // dish opened either as a demo item or as "not on the menu any more".
   const { data: item, isLoading, isError } = useItemDetail(itemId);
 
-  const { cart, addToCart, clearCart, vegOnly } = useFeed();
+  const { cart, addToCart, clearCart } = useCartState();
   const { isAuthenticated } = useCustomerAuth();
-  const accent = accentFor(vegOnly);
   const insets = useSafeAreaInsets();
   const toggleFavoriteMutation = useToggleItemFavorite();
 
@@ -104,7 +104,7 @@ export default function ItemDetail({ navigation, route }) {
     return (
       <Screen>
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color={accent.icon} />
+          <LoadingState />
         </View>
       </Screen>
     );
@@ -177,13 +177,13 @@ export default function ItemDetail({ navigation, route }) {
         contentContainerStyle={{ paddingBottom: SCROLL_PADDING }}
       >
         <View
-          style={{ height: HERO_HEIGHT, backgroundColor: accent.tint }}
+          style={{ height: HERO_HEIGHT, backgroundColor: ACCENT.tint }}
           className="w-full items-center justify-center"
         >
           {photo ? (
             <Image source={photo} style={{ width: "100%", height: "100%" }} resizeMode="cover" />
           ) : (
-            <Utensils size={44} color={accent.icon} strokeWidth={1.5} />
+            <Utensils size={44} color={ACCENT.icon} strokeWidth={1.5} />
           )}
 
           {/* Saved dishes have nowhere to live yet — the favourites store is
@@ -193,7 +193,7 @@ export default function ItemDetail({ navigation, route }) {
             variant="floating"
             backStyle="circle"
             iconColor="#FFFFFF"
-            circleColor={accent.icon}
+            circleColor={ACCENT.icon}
             topOffset={insets.top + 8}
             trailing={
               <Pressable
@@ -203,7 +203,7 @@ export default function ItemDetail({ navigation, route }) {
                 accessibilityState={{ selected: saved }}
                 accessibilityLabel={saved ? "Remove from saved dishes" : "Save this dish"}
               >
-                <Heart size={20} color={accent.icon} fill={saved ? accent.icon : "transparent"} />
+                <Heart size={20} color={ACCENT.icon} fill={saved ? ACCENT.icon : "transparent"} />
                 <Text className="font-jakarta-semibold text-[15px] leading-[20px] text-foreground">
                   Save
                 </Text>
@@ -257,7 +257,7 @@ export default function ItemDetail({ navigation, route }) {
             <ItemChoiceCard
               key={group.id}
               group={group}
-              accent={accent}
+              accent={ACCENT}
               value={selection[group.id]}
               onChange={(optionId) =>
                 setSelection((current) => ({ ...current, [group.id]: optionId }))
@@ -278,13 +278,13 @@ export default function ItemDetail({ navigation, route }) {
         style={{ paddingBottom: insets.bottom + 12 }}
         className="absolute inset-x-0 bottom-0 flex-row items-center gap-3 rounded-t-3xl bg-card px-4 pt-3 shadow-lg shadow-black/20"
       >
-        <QuantityStepper value={quantity} accent={accent} onChange={setQuantity} tone="outline" />
+        <QuantityStepper value={quantity} accent={ACCENT} onChange={setQuantity} tone="outline" />
 
         <Button
           onPress={pay}
           size="lg"
           disabled={adding}
-          style={{ backgroundColor: accent.icon }}
+          style={{ backgroundColor: ACCENT.icon }}
           className="h-14 flex-1 shadow-lg shadow-black/20"
           accessibilityLabel={`Add ${item.name} to cart, ${formatPrice(total)}`}
         >

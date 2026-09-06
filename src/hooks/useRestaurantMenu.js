@@ -28,7 +28,14 @@ function mapOption(option) {
   };
 }
 
-function mapItem(item) {
+// Exported because the checkout summary's upsell rail (`Cart.jsx`) renders the
+// same `MenuItem` documents this menu does — `getUpsellItems` in the server's
+// checkout.service.js pulls them straight out of the cached `getMenu()` data, so
+// they arrive carrying the same `optionGroups[]`. Hand-mapping a few fields off
+// them there produced cards with no `detail`/`customisation`, which is how a
+// customisable dish ended up added to the cart with default options nobody was
+// shown.
+export function mapItem(item) {
   const groups = item.optionGroups ?? [];
   const choiceGroups = groups.filter((group) => group.type === "single_choice");
   const addOnGroups = groups.filter((group) => group.type === "addons");
@@ -135,17 +142,6 @@ export function useRestaurantMenu(restaurantId) {
       menuQuery.refetch();
     },
   };
-}
-
-// The jump-to-category sheet is a separate, lighter endpoint — it doesn't need
-// every item's full customisation schema just to list section names and counts.
-export function useMenuCategories(restaurantId) {
-  return useQuery({
-    queryKey: ["menuCategories", restaurantId],
-    queryFn: () => client.get(`/restaurants/${restaurantId}/menu/categories`),
-    select: (data) => data?.categories ?? [],
-    enabled: !!restaurantId,
-  });
 }
 
 export function useItemDetail(itemId) {

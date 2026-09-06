@@ -1,16 +1,16 @@
 import { useState } from "react";
 import { Alert, ScrollView, View } from "react-native";
-import { Bell, ChevronRight, Clock, FlaskConical, Heart, Leaf, LifeBuoy, LogOut, MapPin } from "lucide-react-native";
+import { Bell, ChevronRight, Clock, Heart, Leaf, LifeBuoy, LogOut, MapPin } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
-import { useFeed } from "@/context/FeedContext";
 import Card from "@/components/ui/Card";
 import Screen from "@/components/ui/Screen";
 import Text from "@/components/ui/Text";
 import PageHeader from "@/components/customer/PageHeader";
 import SettingsRow from "@/components/customer/SettingsRow";
 import PressableScale from "@/components/ui/PressableScale";
-import { accentFor } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { PRESS_SCALE } from "@/lib/motion";
 
 const AVATAR = 56;
@@ -39,8 +39,6 @@ function formatPhone(phone) {
 // list rather than a form.
 export default function Profile({ navigation }) {
   const { user, pendingPhone, logout } = useCustomerAuth();
-  const { vegOnly } = useFeed();
-  const accent = accentFor(vegOnly);
   const [signingOut, setSigningOut] = useState(false);
 
   // Only ever empty on an account that predates the sign-up name step — the row below
@@ -105,7 +103,7 @@ export default function Profile({ navigation }) {
           >
           <Card className="w-full flex-row items-center gap-3 p-4">
             <View
-              style={{ width: AVATAR, height: AVATAR, backgroundColor: accent.icon }}
+              style={{ width: AVATAR, height: AVATAR, backgroundColor: ACCENT.icon }}
               className="items-center justify-center rounded-full"
             >
               <Text className="font-jakarta-bold text-[21px] leading-[28px] text-white">
@@ -123,7 +121,7 @@ export default function Profile({ navigation }) {
               </Text>
             </View>
 
-            <ChevronRight size={20} color="#999999" />
+            <ChevronRight size={20} color={colors.muted.placeholder} />
           </Card>
           </PressableScale>
         </View>
@@ -142,14 +140,6 @@ export default function Profile({ navigation }) {
           />
 
           <SettingsRow label="Notifications" icon={Bell} onPress={() => go("Notifications")} />
-
-          {__DEV__ ? (
-            <SettingsRow
-              label="Feature flags (dev)"
-              icon={FlaskConical}
-              onPress={() => go("FeatureFlags")}
-            />
-          ) : null}
 
           <SettingsRow label="Help & support" icon={LifeBuoy} onPress={() => go("Help")} />
         </View>

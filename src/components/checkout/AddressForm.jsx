@@ -2,12 +2,13 @@ import { useEffect, useState } from "react";
 import { TextInput, View } from "react-native";
 import { X } from "lucide-react-native";
 
+import { colors } from "@/lib/tokens";
 import { useCustomerAuth } from "@/context/CustomerAuthContext";
 import Button from "@/components/ui/Button";
 import PressableScale from "@/components/ui/PressableScale";
 import Text from "@/components/ui/Text";
 import { ADDRESS_LABELS } from "@/data/addresses";
-import { ACCENTS } from "@/lib/accent";
+import { ACCENT } from "@/lib/accent";
 import { PRESS_SCALE } from "@/lib/motion";
 
 // The body of the "add a new address" form, with no surface of its own — the
@@ -32,7 +33,7 @@ import { PRESS_SCALE } from "@/lib/motion";
 // inferred from anything else the customer has given us.
 const isComplete = (line, pincode) => line.trim().length > 0 && /^\d{6}$/.test(pincode.trim());
 
-export default function AddressForm({ active = true, accent = ACCENTS.default, onSave, onCancel }) {
+export default function AddressForm({ active = true, accent = ACCENT, onSave, onCancel }) {
   const { deliveryLocation, user } = useCustomerAuth();
 
   const [label, setLabel] = useState(ADDRESS_LABELS[0]);
@@ -97,7 +98,7 @@ export default function AddressForm({ active = true, accent = ACCENTS.default, o
           accessibilityRole="button"
           accessibilityLabel="Close"
         >
-          <X size={24} color="#1A1A1A" />
+          <X size={24} color={colors.foreground} />
         </PressableScale>
       </View>
 
@@ -142,7 +143,7 @@ export default function AddressForm({ active = true, accent = ACCENTS.default, o
         value={line}
         onChangeText={setLine}
         placeholder="402, Sunrise Apartments, 5th Block"
-        placeholderTextColor="#999999"
+        placeholderTextColor={colors.muted.placeholder}
         multiline
         className="mt-3 min-h-[72px] rounded-2xl border border-border bg-white p-4 font-jakarta text-[16px] leading-[23px] text-foreground"
         accessibilityLabel="Flat, building, street"
@@ -224,7 +225,7 @@ function Field({ label, ...props }) {
   return (
     <TextInput
       {...props}
-      placeholderTextColor="#999999"
+      placeholderTextColor={colors.muted.placeholder}
       className="mt-3 h-12 rounded-2xl border border-border bg-white px-4 font-jakarta text-[16px] text-foreground"
       accessibilityLabel={label}
     />
